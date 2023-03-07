@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/mick-roper/rdfox-cli/cmd/config"
+	this_cfg "github.com/mick-roper/rdfox-cli/config"
 	"github.com/mick-roper/rdfox-cli/logging"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -20,8 +21,14 @@ func Execute() int {
 
 	defer cancel()
 
+	cfg, err := this_cfg.Load()
+	if err != nil {
+		logger.Error("could not load config", zap.Error(err))
+		return 1
+	}
+
 	cmd := newRootCommand()
-	cmd.AddCommand(config.Cmd(nil))
+	cmd.AddCommand(config.Cmd(cfg))
 
 	if err := cmd.ExecuteContext(ctx); err != nil {
 		logger.Error("execution failed", zap.Error(err))
