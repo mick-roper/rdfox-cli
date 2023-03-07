@@ -1,7 +1,11 @@
 package main
 
-import "log"
+import (
+	"os"
+
+	"github.com/mick-roper/rdfox-cli/cmd"
+)
 
 func main() {
-	log.Print("hello!")
+	os.Exit(cmd.Execute())
 }
