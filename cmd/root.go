@@ -4,33 +4,31 @@ import (
 	"context"
 	"time"
 
-	"github.com/mick-roper/rdfox-cli/cmd/config"
-	this_cfg "github.com/mick-roper/rdfox-cli/config"
+	"github.com/mick-roper/rdfox-cli/cmd/stats"
 	"github.com/mick-roper/rdfox-cli/logging"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
 func Execute() int {
-	logger := logging.New()
-	defer logger.Sync()
-
 	ctx := context.TODO()
-	ctx = logging.AddToContext(ctx, logger)
 	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
 
+	defer func() { logging.GetFromContext(ctx).Sync() }()
 	defer cancel()
 
-	cfg, err := this_cfg.Load()
-	if err != nil {
-		logger.Error("could not load config", zap.Error(err))
-		return 1
+	cmd := newRootCommand()
+	cmd.AddCommand(stats.Cmd())
+
+	cmd.PreRun = func(cmd *cobra.Command, _ []string) {
+		level := cmd.Flags().Lookup("log-level").Value.String()
+		logger := logging.New(level)
+		ctx = logging.AddToContext(cmd.Context(), logger)
+		cmd.SetContext(ctx)
 	}
 
-	cmd := newRootCommand()
-	cmd.AddCommand(config.Cmd(cfg))
-
 	if err := cmd.ExecuteContext(ctx); err != nil {
+		logger := logging.GetFromContext(cmd.Context())
 		logger.Error("execution failed", zap.Error(err))
 		return 1
 	}
@@ -45,6 +43,8 @@ func newRootCommand() *cobra.Command {
 	flags.String("log-level", "info", "the log level used by the CLI")
 	flags.String("role", "", "the role used to communicate with RDFox")
 	flags.String("password", "", "the password used to communicate with RDFox")
+	flags.String("server", "", "the name of the RDFox server")
+	flags.String("protocol", "https", "the protocol to use to communicate with RDFox")
 
 	return &cmd
 }
