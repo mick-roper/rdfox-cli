@@ -3,10 +3,11 @@ package stats
 import (
 	"errors"
 	"fmt"
-	"io"
+	"log"
 	"net/http"
 
 	"github.com/mick-roper/rdfox-cli/logging"
+	"github.com/mick-roper/rdfox-cli/parse"
 	"github.com/mick-roper/rdfox-cli/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -55,13 +56,9 @@ func Cmd() *cobra.Command {
 				return errors.New("bad status")
 			}
 
-			b, err := io.ReadAll(res.Body)
-			if err != nil {
-				logger.Error("could not read response", zap.Error(err))
-				return err
-			}
+			stats := parse.Stats(res.Body)
 
-			logger.Info("got response", zap.ByteString("data", b))
+			log.Print(stats)
 
 			return nil
 		},
