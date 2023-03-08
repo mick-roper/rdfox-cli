@@ -8,10 +8,10 @@ import (
 )
 
 func TestStats(t *testing.T) {
-	const happyPath = `1   "Component name" "hello"
-1 "world" 1
-2 "component name" "rick"
-2 "and" "morty"`
+	const happyPath = `1	"Component name"	"hello"
+1	"world"	1
+2	"component name"	"rick"
+2	"and"	"morty"`
 
 	type args struct {
 		r io.Reader

@@ -3,6 +3,8 @@ package parse
 import (
 	"bufio"
 	"io"
+	"log"
+	"strings"
 )
 
 type statistics map[string]map[string]interface{}
@@ -20,28 +22,10 @@ func Stats(r io.Reader) statistics {
 	)
 
 	for scanner.Scan() {
-		state := stateIndex
-		delimitedString := false
-		// var prevByte byte
-		// var propName string
-		// var value interface{}
+		t := scanner.Text()
+		parts := strings.Split(t, "\t")
 
-		for _, b := range scanner.Bytes() {
-			// prevByte = b
-
-			switch b {
-			case ' ':
-				continue
-			case '"':
-				delimitedString = !delimitedString
-			default:
-				if state == stateValue {
-					state = stateIndex
-				} else {
-					state++
-				}
-			}
-		}
+		log.Print(parts)
 	}
 
 	return result
