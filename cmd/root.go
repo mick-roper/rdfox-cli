@@ -14,7 +14,6 @@ func Execute() int {
 	ctx := context.TODO()
 	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
 
-	defer func() { logging.GetFromContext(ctx).Sync() }()
 	defer cancel()
 
 	cmd := newRootCommand()
@@ -25,6 +24,10 @@ func Execute() int {
 		logger := logging.New(level)
 		ctx = logging.AddToContext(cmd.Context(), logger)
 		cmd.SetContext(ctx)
+	}
+
+	cmd.PostRun = func(cmd *cobra.Command, _ []string) {
+		logging.GetFromContext(cmd.Context()).Sync()
 	}
 
 	if err := cmd.ExecuteContext(ctx); err != nil {
