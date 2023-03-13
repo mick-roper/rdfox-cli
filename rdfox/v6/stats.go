@@ -30,7 +30,7 @@ func GetStats(ctx context.Context, server, protocol, role, password, datastore s
 	logger.Debug("url built", zap.String("url", url))
 	logger.Debug("building request")
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		logger.Error("could not build request", zap.Error(err))
 		return nil, err
@@ -38,7 +38,6 @@ func GetStats(ctx context.Context, server, protocol, role, password, datastore s
 
 	req.Header.Set("Authorization", utils.BasicAuthHeaderValue(role, password))
 	req.Header.Set("Accept", "*/*")
-	// req.Header.Set("Accept", "application/x.sparql-results+json-abbrev")
 
 	logger.Debug("request built", zap.Stringer("url", req.URL), zap.String("method", req.Method), zap.Any("headers", req.Header))
 	logger.Debug("making request...")
