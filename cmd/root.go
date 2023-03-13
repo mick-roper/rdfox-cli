@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"context"
+	x "net/http"
 	"time"
 
 	"github.com/mick-roper/rdfox-cli/cmd/config"
 	"github.com/mick-roper/rdfox-cli/cmd/stats"
 	configuration "github.com/mick-roper/rdfox-cli/config"
+	"github.com/mick-roper/rdfox-cli/http"
 	"github.com/mick-roper/rdfox-cli/logging"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -17,6 +19,8 @@ func Execute() int {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
 
 	defer cancel()
+
+	ctx = http.AddClientToContext(ctx, x.DefaultClient)
 
 	cmd := newRootCommand(ctx)
 	cmd.AddCommand(stats.Cmd())
