@@ -22,7 +22,6 @@ func Execute() int {
 	preRun := func(cmd *cobra.Command, _ []string) {
 		level := cmd.Flags().Lookup("log-level").Value.String()
 		logger := logging.New(level)
-		logger = logger.With(zap.String("hello", "world"))
 		ctx = logging.AddToContext(cmd.Context(), logger)
 		cmd.SetContext(ctx)
 	}
