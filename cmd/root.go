@@ -18,7 +18,7 @@ func Execute() int {
 
 	defer cancel()
 
-	cmd := newRootCommand()
+	cmd := newRootCommand(ctx)
 	cmd.AddCommand(stats.Cmd())
 	cmd.AddCommand(config.Cmd())
 
@@ -54,8 +54,7 @@ func Execute() int {
 	return 0
 }
 
-func newRootCommand() *cobra.Command {
-	var cmd cobra.Command
+func newRootCommand(ctx context.Context) *cobra.Command {
 	var (
 		defaultLogLevel = "info"
 		defaultProtocol = "https"
@@ -63,8 +62,9 @@ func newRootCommand() *cobra.Command {
 		defaultPassword = ""
 		defaultServer   = ""
 	)
-
-	cfg, err := configuration.DefaultFile()
+	var cmd cobra.Command
+	cmd.SetContext(ctx)
+	cfg, err := configuration.DefaultFile(ctx)
 	if err == nil {
 		if s := cfg.LogLevel(); s != "" {
 			defaultLogLevel = s

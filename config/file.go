@@ -2,12 +2,15 @@ package config
 
 import (
 	"bufio"
+	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
-)
 
-const DefaultFilePath = "$HOME/.rdfox-cli"
+	"github.com/mick-roper/rdfox-cli/logging"
+	"go.uber.org/zap"
+)
 
 const (
 	keyServer   = "server"
@@ -16,6 +19,8 @@ const (
 	keyPassword = "password"
 	keyLogLevel = "log_level"
 )
+
+const separator = "\t"
 
 type fileConfig struct {
 	server   string
@@ -45,11 +50,20 @@ func (f fileConfig) LogLevel() string {
 	return f.logLevel
 }
 
-func DefaultFile() (Config, error) {
-	return File(DefaultFilePath)
+func DefaultFilePath() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+
+	return fmt.Sprint(home, "/.rdfox-cli")
 }
 
-func File(path string) (Config, error) {
+func DefaultFile(ctx context.Context) (Config, error) {
+	return File(ctx, DefaultFilePath())
+}
+
+func File(ctx context.Context, path string) (Config, error) {
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		return nil, errors.New("file does not exist")
@@ -68,7 +82,7 @@ func File(path string) (Config, error) {
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
 		s := scanner.Text()
-		parts := strings.SplitN(s, "\t", 2)
+		parts := strings.SplitN(s, separator, 2)
 
 		if len(parts) != 2 {
 			return nil, errors.New("invalid file format")
@@ -94,6 +108,83 @@ func File(path string) (Config, error) {
 	return &cfg, nil
 }
 
-func WriteFile(cfg Config) error {
-	return errors.New("not implemented")
+func WriteFile(ctx context.Context, path string, cfg Config, overwrite bool) error {
+	logger := logging.GetFromContext(ctx).With(zap.String("path", path))
+
+	var file *os.File
+
+	logger.Debug("getting file stats...")
+
+	_, err := os.Stat(path)
+
+	if err == nil {
+		if !overwrite {
+			return errors.New("file exists but 'overwrite' is <false> - delete the file manually or set 'overwrite' to <true>")
+		}
+
+		logger.Debug("file exists - opening the file...")
+
+		file, err = os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+		if err != nil {
+			logger.Error("could not open file", zap.Error(err))
+			return err
+		}
+
+		logger.Debug("file opened - truncating the file...")
+
+		if err := file.Truncate(0); err != nil {
+			logger.Error("could not truncate the file", zap.Error(err))
+			return err
+		}
+
+		logger.Debug("file truncated")
+	} else {
+		if os.IsNotExist(err) {
+			logger.Debug("file does not exist - creating a new file")
+
+			file, err = os.Create(path)
+			if err != nil {
+				logger.Error("could not create the file", zap.Error(err))
+				return err
+			}
+
+			logger.Debug("file created")
+		} else {
+			logger.Error("could not get file stats", zap.Error(err))
+			return err
+		}
+
+	}
+
+	defer file.Close()
+
+	writeFn := func(pairs map[string]string) error {
+		for k, v := range pairs {
+			s := fmt.Sprintf("%s%s%s\n", k, separator, v)
+			if _, err := file.WriteString(s); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	logger.Debug("writing file contents")
+
+	data := map[string]string{
+		keyServer:   cfg.Server(),
+		keyProtocol: cfg.Protocol(),
+		keyRole:     cfg.Role(),
+		keyPassword: cfg.Password(),
+		keyLogLevel: cfg.LogLevel(),
+	}
+
+	if err := writeFn(data); err != nil {
+		logger.Error("coudl not write file data", zap.Error(err))
+		return err
+	}
+
+	logger.Debug("file written")
+
+	return nil
 }
