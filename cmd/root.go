@@ -4,7 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/mick-roper/rdfox-cli/cmd/config"
 	"github.com/mick-roper/rdfox-cli/cmd/stats"
+	configuration "github.com/mick-roper/rdfox-cli/config"
 	"github.com/mick-roper/rdfox-cli/logging"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -18,6 +20,7 @@ func Execute() int {
 
 	cmd := newRootCommand()
 	cmd.AddCommand(stats.Cmd())
+	cmd.AddCommand(config.Cmd())
 
 	preRun := func(cmd *cobra.Command, _ []string) {
 		level := cmd.Flags().Lookup("log-level").Value.String()
@@ -53,13 +56,35 @@ func Execute() int {
 
 func newRootCommand() *cobra.Command {
 	var cmd cobra.Command
+	var (
+		defaultLogLevel = "info"
+		defaultProtocol = "https"
+		defaultRole     = ""
+		defaultPassword = ""
+		defaultServer   = ""
+	)
+
+	cfg, err := configuration.DefaultFile()
+	if err == nil {
+		if s := cfg.LogLevel(); s != "" {
+			defaultLogLevel = s
+		}
+
+		if s := cfg.Protocol(); s != "" {
+			defaultProtocol = s
+		}
+
+		defaultRole = cfg.Role()
+		defaultPassword = cfg.Password()
+		defaultServer = cfg.Server()
+	}
 
 	flags := cmd.PersistentFlags()
-	flags.String("log-level", "info", "the log level used by the CLI")
-	flags.String("role", "", "the role used to communicate with RDFox")
-	flags.String("password", "", "the password used to communicate with RDFox")
-	flags.String("server", "", "the name of the RDFox server")
-	flags.String("protocol", "https", "the protocol to use to communicate with RDFox")
+	flags.String("log-level", defaultLogLevel, "the log level used by the CLI")
+	flags.String("role", defaultRole, "the role used to communicate with RDFox")
+	flags.String("password", defaultPassword, "the password used to communicate with RDFox")
+	flags.String("server", defaultServer, "the name of the RDFox server")
+	flags.String("protocol", defaultProtocol, "the protocol to use to communicate with RDFox")
 
 	return &cmd
 }

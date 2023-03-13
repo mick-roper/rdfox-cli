@@ -5,4 +5,5 @@ type Config interface {
 	Protocol() string
 	Role() string
 	Password() string
+	LogLevel() string
 }
