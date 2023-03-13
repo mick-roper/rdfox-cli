@@ -75,10 +75,21 @@ func parseStats(r io.Reader) statistics {
 			continue
 		}
 
-		t := scanner.Text()
+		bytes := scanner.Bytes()
+		var chunks [3][]byte
+		i := 0
 
-		parts := strings.SplitN(t, "\t", 3)
-		_, p, v := parts[0], strings.Trim(parts[1], "\""), strings.Trim(parts[2], "\"")
+		for _, b := range bytes {
+			if b != '\t' {
+				chunks[i] = append(chunks[i], b)
+				continue
+			}
+
+			i++
+		}
+
+		p := strings.Trim(string(chunks[1]), "\"")
+		v := strings.Trim(string(chunks[2]), "\"")
 
 		if p == "Component name" {
 			thisComponent = v
