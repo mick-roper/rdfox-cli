@@ -1,36 +1,32 @@
 package logging
 
 import (
-	"encoding/json"
-	"fmt"
+	"os"
 	"strings"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func New(level string) *zap.Logger {
-	rawJSON := fmt.Sprintf(`{
-	  "level": "%s",
-	  "encoding": "console",
-	  "outputPaths": ["stdout"],
-	  "errorOutputPaths": ["stderr"],
-	  "encoderConfig": {
-	    "messageKey": "message",
-	    "levelKey": "level",
-	    "levelEncoder": "lowercase"
-	  }
-	}`, level)
+	cfg := zap.NewProductionConfig()
+	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	core := zapcore.NewCore(
+		zapcore.NewConsoleEncoder(cfg.EncoderConfig),
+		zapcore.AddSync(os.Stdout),
+		parseLevel(level),
+	)
 
-	var cfg zap.Config
-	if err := json.Unmarshal([]byte(rawJSON), &cfg); err != nil {
-		panic(err)
+	return zap.New(core)
+}
+
+func parseLevel(level string) zapcore.Level {
+	switch strings.ToLower(level) {
+	case "debug", "trace":
+		return zap.DebugLevel
+	case "error":
+		return zap.ErrorLevel
+	default:
+		return zap.InfoLevel
 	}
-
-	if strings.EqualFold(level, "debug") {
-		cfg.EncoderConfig.StacktraceKey = "stack-trace"
-	} else {
-		cfg.EncoderConfig.StacktraceKey = ""
-	}
-
-	return zap.Must(cfg.Build())
 }
