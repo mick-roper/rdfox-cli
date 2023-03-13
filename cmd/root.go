@@ -19,15 +19,28 @@ func Execute() int {
 	cmd := newRootCommand()
 	cmd.AddCommand(stats.Cmd())
 
-	cmd.PreRun = func(cmd *cobra.Command, _ []string) {
+	preRun := func(cmd *cobra.Command, _ []string) {
 		level := cmd.Flags().Lookup("log-level").Value.String()
 		logger := logging.New(level)
+		logger = logger.With(zap.String("hello", "world"))
 		ctx = logging.AddToContext(cmd.Context(), logger)
 		cmd.SetContext(ctx)
 	}
 
-	cmd.PostRun = func(cmd *cobra.Command, _ []string) {
+	postRun := func(cmd *cobra.Command, _ []string) {
 		logging.GetFromContext(cmd.Context()).Sync()
+	}
+
+	cmd.PersistentPreRun = preRun
+	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		preRun(cmd, args)
+		return nil
+	}
+
+	cmd.PersistentPostRun = postRun
+	cmd.PersistentPostRunE = func(cmd *cobra.Command, args []string) error {
+		postRun(cmd, args)
+		return nil
 	}
 
 	if err := cmd.ExecuteContext(ctx); err != nil {
