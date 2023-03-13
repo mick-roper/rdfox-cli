@@ -76,32 +76,24 @@ func File(ctx context.Context, path string) (Config, error) {
 
 	defer file.Close()
 
+	data, err := read(file)
+	if err != nil {
+		return nil, err
+	}
+
 	var cfg fileConfig
-
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		s := scanner.Text()
-		parts := strings.SplitN(s, separator, 2)
-
-		if len(parts) != 2 {
-			return nil, errors.New("invalid file format")
-		}
-
-		key := parts[0]
-		value := parts[1]
-
-		switch key {
-		case keyServer:
-			cfg.server = value
-		case keyProtocol:
-			cfg.protocol = value
-		case keyRole:
-			cfg.role = value
-		case keyPassword:
-			cfg.password = value
+	for k, v := range data {
+		switch k {
 		case keyLogLevel:
-			cfg.logLevel = value
+			cfg.logLevel = v
+		case keyPassword:
+			cfg.password = v
+		case keyProtocol:
+			cfg.protocol = v
+		case keyRole:
+			cfg.role = v
+		case keyServer:
+			cfg.server = v
 		}
 	}
 
@@ -158,17 +150,6 @@ func WriteFile(ctx context.Context, path string, cfg Config, overwrite bool) err
 
 	defer file.Close()
 
-	writeFn := func(pairs map[string]string) error {
-		for k, v := range pairs {
-			s := fmt.Sprintf("%s%s%s\n", k, separator, v)
-			if _, err := file.WriteString(s); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
-
 	logger.Debug("writing file contents")
 
 	data := map[string]string{
@@ -179,12 +160,43 @@ func WriteFile(ctx context.Context, path string, cfg Config, overwrite bool) err
 		keyLogLevel: cfg.LogLevel(),
 	}
 
-	if err := writeFn(data); err != nil {
+	if err := write(file, data); err != nil {
 		logger.Error("coudl not write file data", zap.Error(err))
 		return err
 	}
 
 	logger.Debug("file written")
+
+	return nil
+}
+
+func read(file *os.File) (map[string]string, error) {
+	m := map[string]string{}
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+	for scanner.Scan() {
+		s := scanner.Text()
+		parts := strings.SplitN(s, separator, 2)
+
+		if len(parts) != 2 {
+			return nil, errors.New("invalid file format")
+		}
+
+		key := parts[0]
+		value := parts[1]
+		m[key] = value
+	}
+
+	return m, nil
+}
+
+func write(file *os.File, pairs map[string]string) error {
+	for k, v := range pairs {
+		s := fmt.Sprintf("%s%s%s\n", k, separator, v)
+		if _, err := file.WriteString(s); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
