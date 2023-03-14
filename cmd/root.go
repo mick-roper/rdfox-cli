@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/mick-roper/rdfox-cli/cmd/config"
+	"github.com/mick-roper/rdfox-cli/cmd/operation"
 	"github.com/mick-roper/rdfox-cli/cmd/stats"
 	configuration "github.com/mick-roper/rdfox-cli/config"
 	"github.com/mick-roper/rdfox-cli/logging"
@@ -25,6 +26,7 @@ func Execute() int {
 	cmd := newRootCommand(ctx)
 	cmd.AddCommand(stats.Cmd())
 	cmd.AddCommand(config.Cmd())
+	cmd.AddCommand(operation.Cmd())
 
 	preRun := func(cmd *cobra.Command, _ []string) {
 		level := cmd.Flags().Lookup("log-level").Value.String()
