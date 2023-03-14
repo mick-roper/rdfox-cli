@@ -14,12 +14,16 @@ test:
 	go test ./...
 
 .PHONY: build
-build: build-linux build-windows
+build: build-linux build-windows build-darwin
 
 .PHONY: build-linux
 build-linux:
-	GOARCH=amd64 CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -a -o bin/app main.go
+	GOARCH=amd64 CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -a -o bin/linux/app main.go
+
+.PHONY: build-darwin
+build-darwin:
+	GOARCH=amd64 CGO_ENABLED=0 GOOS=darwin go build -ldflags="-s -w" -a -o bin/darwin/app main.go
 
 .PHONY: build-windows
 build-windows:
-	GOARCH=amd64 CGO_ENABLED=0 GOOS=windows go build -ldflags="-s -w" -a -o bin/app.exe main.go
+	GOARCH=amd64 CGO_ENABLED=0 GOOS=windows go build -ldflags="-s -w" -a -o bin/win/app.exe main.go
