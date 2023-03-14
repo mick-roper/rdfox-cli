@@ -14,7 +14,7 @@ type Client interface {
 }
 
 func HttpClientFromContext(ctx context.Context) Client {
-	if x, ok := GetFromContext(ctx, httpClientKey).(Client); ok {
+	if x, ok := getFromContext(ctx, httpClientKey).(Client); ok {
 		return x
 	}
 
@@ -22,7 +22,7 @@ func HttpClientFromContext(ctx context.Context) Client {
 }
 
 func AddClientToContext(ctx context.Context, client Client) context.Context {
-	return AddToContext(ctx, httpClientKey, client)
+	return addToContext(ctx, httpClientKey, client)
 }
 
 func BasicAuthHeaderValue(username, password string) string {

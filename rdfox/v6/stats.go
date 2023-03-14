@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/mick-roper/rdfox-cli/logging"
 	"github.com/mick-roper/rdfox-cli/utils"
 	"go.uber.org/zap"
 )
@@ -16,7 +15,7 @@ import (
 type statistics map[string]map[string]interface{}
 
 func GetStats(ctx context.Context, server, protocol, role, password, datastore string) (statistics, error) {
-	logger := logging.GetFromContext(ctx)
+	logger := utils.LoggerFromContext(ctx)
 	client := utils.HttpClientFromContext(ctx)
 
 	logger.Debug("building url...")
