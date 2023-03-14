@@ -6,8 +6,12 @@ env:
   VERSION: 0.1.${{ github.sha }}
 
 jobs:
-  build-and-release:
+  build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64]
+        os: [darwin, linux, windows]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Go
@@ -15,12 +19,7 @@ jobs:
         with:
           go-version: '1.20'
       - name: make
+        env:
+          GOARCH: ${{ matrix.arch }}
+          GOOS: ${{ matrix.os }}
         run: make
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: |
-            bin/darwin/app
-            bin/linux/app
-            bin/windows/app.exe
