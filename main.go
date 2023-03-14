@@ -6,6 +6,8 @@ import (
 	"github.com/mick-roper/rdfox-cli/cmd"
 )
 
+var Version string
+
 func main() {
-	os.Exit(cmd.Execute())
+	os.Exit(cmd.Execute(Version))
 }
