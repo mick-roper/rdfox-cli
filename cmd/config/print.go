@@ -17,20 +17,20 @@ func printCmd() *cobra.Command {
 		ctx := cmd.Context()
 		logger := utils.LoggerFromContext(ctx)
 
-		logger.Debug("reading file", zap.String("path", path))
+		logger.Debug("getting flags...")
 
-		cfg, err := config.File(ctx, path)
-		if err != nil {
-			logger.Error("could not read file", zap.Error(err))
-			return err
-		}
+		server := cmd.Flags().Lookup("server").Value.String()
+		protocol := cmd.Flags().Lookup("protocol").Value.String()
+		role := cmd.Flags().Lookup("role").Value.String()
+		password := cmd.Flags().Lookup("password").Value.String()
+		logLevel := cmd.Flags().Lookup("log-level").Value.String()
 
 		logger.Info("got config",
-			zap.String("server", cfg.Server()),
-			zap.String("role", cfg.Role()),
-			zap.String("password", cfg.Password()),
-			zap.String("protocol", cfg.Protocol()),
-			zap.String("log-level", cfg.LogLevel()),
+			zap.String("server", server),
+			zap.String("role", role),
+			zap.String("password", password),
+			zap.String("protocol", protocol),
+			zap.String("log-level", logLevel),
 		)
 
 		return nil
