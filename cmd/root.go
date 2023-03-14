@@ -8,6 +8,7 @@ import (
 	"github.com/mick-roper/rdfox-cli/cmd/config"
 	"github.com/mick-roper/rdfox-cli/cmd/operation"
 	"github.com/mick-roper/rdfox-cli/cmd/stats"
+	"github.com/mick-roper/rdfox-cli/cmd/version"
 	configuration "github.com/mick-roper/rdfox-cli/config"
 	"github.com/mick-roper/rdfox-cli/logging"
 	"github.com/mick-roper/rdfox-cli/utils"
@@ -15,7 +16,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func Execute() int {
+func Execute(currentVersion string) int {
 	ctx := context.TODO()
 	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
 
@@ -24,6 +25,7 @@ func Execute() int {
 	ctx = utils.AddHttpClientToContext(ctx, http.DefaultClient)
 
 	cmd := newRootCommand(ctx)
+	cmd.AddCommand(version.Cmd(currentVersion))
 	cmd.AddCommand(stats.Cmd())
 	cmd.AddCommand(config.Cmd())
 	cmd.AddCommand(operation.Cmd())
