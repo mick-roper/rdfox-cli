@@ -61,27 +61,24 @@ func newRootCommand(ctx context.Context) *cobra.Command {
 	var (
 		defaultLogLevel = "info"
 		defaultProtocol = "https"
-		defaultRole     = ""
-		defaultPassword = ""
-		defaultServer   = ""
 	)
-	var cmd cobra.Command
-	cmd.SetContext(ctx)
-	cfg, err := configuration.DefaultFile(ctx)
-	if err == nil {
-		if s := cfg.LogLevel(); s != "" {
-			defaultLogLevel = s
-		}
 
-		if s := cfg.Protocol(); s != "" {
-			defaultProtocol = s
-		}
+	cfg := configuration.Load(configuration.FileLoader(ctx, configuration.DefaultFilePath()), configuration.FromEnv)
 
-		defaultRole = cfg.Role()
-		defaultPassword = cfg.Password()
-		defaultServer = cfg.Server()
+	if s := cfg.LogLevel(); s != "" {
+		defaultLogLevel = s
 	}
 
+	if s := cfg.Protocol(); s != "" {
+		defaultProtocol = s
+	}
+
+	defaultServer := cfg.Server()
+	defaultRole := cfg.Role()
+	defaultPassword := cfg.Password()
+
+	var cmd cobra.Command
+	cmd.SetContext(ctx)
 	flags := cmd.PersistentFlags()
 	flags.String("log-level", defaultLogLevel, "the log level used by the CLI")
 	flags.String("role", defaultRole, "the role used to communicate with RDFox")
