@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/mick-roper/rdfox-cli/config"
-	"github.com/mick-roper/rdfox-cli/logging"
+	"github.com/mick-roper/rdfox-cli/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -15,7 +15,7 @@ func printCmd() *cobra.Command {
 	cmd.Short = "prints the current config"
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		logger := logging.GetFromContext(ctx)
+		logger := utils.LoggerFromContext(ctx)
 
 		logger.Debug("reading file", zap.String("path", path))
 

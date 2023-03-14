@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mick-roper/rdfox-cli/logging"
+	"github.com/mick-roper/rdfox-cli/utils"
 	"go.uber.org/zap"
 )
 
@@ -101,7 +101,7 @@ func File(ctx context.Context, path string) (Config, error) {
 }
 
 func WriteFile(ctx context.Context, path string, cfg Config, overwrite bool) error {
-	logger := logging.GetFromContext(ctx).With(zap.String("path", path))
+	logger := utils.LoggerFromContext(ctx).With(zap.String("path", path))
 
 	var file *os.File
 
