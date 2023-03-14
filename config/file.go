@@ -63,6 +63,17 @@ func DefaultFile(ctx context.Context) (Config, error) {
 	return File(ctx, DefaultFilePath())
 }
 
+func FileLoader(ctx context.Context, path string) loader {
+	return func() Config {
+		cfg, err := File(ctx, path)
+		if err != nil {
+			panic(err)
+		}
+
+		return cfg
+	}
+}
+
 func File(ctx context.Context, path string) (Config, error) {
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
