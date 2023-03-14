@@ -1,4 +1,6 @@
 VERSION ?= 0.0.$(shell git rev-parse --short HEAD)-dev
+GOARCH ?= amd64
+GOOS ?= darwin
 
 .PHONY: all
 all: clean install test build
@@ -16,16 +18,5 @@ test:
 	go test ./...
 
 .PHONY: build
-build: build-linux build-windows build-darwin
-
-.PHONY: build-linux
-build-linux:
-	GOARCH=amd64 CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w -X main.Version=$(VERSION)" -a -o bin/linux/app main.go
-
-.PHONY: build-darwin
-build-darwin:
-	GOARCH=amd64 CGO_ENABLED=0 GOOS=darwin go build -ldflags="-s -w -X main.Version=$(VERSION)" -a -o bin/darwin/app main.go
-
-.PHONY: build-windows
-build-windows:
-	GOARCH=amd64 CGO_ENABLED=0 GOOS=windows go build -ldflags="-s -w -X main.Version=$(VERSION)" -a -o bin/win/app.exe main.go
+build:
+	CGO_ENABLED=0 GOARCH=$(GOARCH) GOOS=$(GOOS) go build -ldflags="-s -w -X main.Version=$(VERSION)" -a -o bin/$(GOOS)/$(GOARCH)/app main.go
