@@ -2,14 +2,14 @@ package cmd
 
 import (
 	"context"
-	x "net/http"
+	"net/http"
 	"time"
 
 	"github.com/mick-roper/rdfox-cli/cmd/config"
 	"github.com/mick-roper/rdfox-cli/cmd/stats"
 	configuration "github.com/mick-roper/rdfox-cli/config"
-	"github.com/mick-roper/rdfox-cli/http"
 	"github.com/mick-roper/rdfox-cli/logging"
+	"github.com/mick-roper/rdfox-cli/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -20,7 +20,7 @@ func Execute() int {
 
 	defer cancel()
 
-	ctx = http.AddClientToContext(ctx, x.DefaultClient)
+	ctx = utils.AddHttpClientToContext(ctx, http.DefaultClient)
 
 	cmd := newRootCommand(ctx)
 	cmd.AddCommand(stats.Cmd())
@@ -29,12 +29,12 @@ func Execute() int {
 	preRun := func(cmd *cobra.Command, _ []string) {
 		level := cmd.Flags().Lookup("log-level").Value.String()
 		logger := logging.New(level)
-		ctx = logging.AddToContext(cmd.Context(), logger)
+		ctx = utils.AddLoggerToContext(cmd.Context(), logger)
 		cmd.SetContext(ctx)
 	}
 
 	postRun := func(cmd *cobra.Command, _ []string) {
-		logging.GetFromContext(cmd.Context()).Sync()
+		utils.LoggerFromContext(cmd.Context()).Sync()
 	}
 
 	cmd.PersistentPreRun = preRun
@@ -50,8 +50,7 @@ func Execute() int {
 	}
 
 	if err := cmd.ExecuteContext(ctx); err != nil {
-		logger := logging.GetFromContext(cmd.Context())
-		logger.Error("execution failed", zap.Error(err))
+		utils.LoggerFromContext(cmd.Context()).Error("execution failed", zap.Error(err))
 		return 1
 	}
 

@@ -21,7 +21,7 @@ func HttpClientFromContext(ctx context.Context) Client {
 	return http.DefaultClient
 }
 
-func AddClientToContext(ctx context.Context, client Client) context.Context {
+func AddHttpClientToContext(ctx context.Context, client Client) context.Context {
 	return addToContext(ctx, httpClientKey, client)
 }
 
