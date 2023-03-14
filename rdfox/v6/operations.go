@@ -1,10 +1,12 @@
 package v6
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/mick-roper/rdfox-cli/utils"
 	"go.uber.org/zap"
@@ -16,7 +18,7 @@ func ImportAxioms(ctx context.Context, protocol, server, role, password, datasto
 
 	logger.Debug("building url...")
 
-	url := fmt.Sprint(protocol, "://", server, "/datastores/", datastore, "/content?operation=add-axioms&source-graph=", srcGraph, "&detination-graph=", dstGraph)
+	url := fmt.Sprintf("%s://%s/datastores/%s/content?operation=add-axioms&source-graph=%s&destination-graph=%s", protocol, server, datastore, srcGraph, dstGraph)
 
 	logger.Debug("url built", zap.String("url", url))
 	logger.Debug("building request...")
@@ -41,19 +43,21 @@ func ImportAxioms(ctx context.Context, protocol, server, role, password, datasto
 
 	defer res.Body.Close()
 
-	logger.Debug("got response", zap.String("status", res.Status))
-
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("bad response from server: %s", res.Status)
+		payload, err := io.ReadAll(res.Body)
+		if err != nil {
+			return fmt.Errorf("bad response from server: %s - COULD NOT READ RESPONSE: %s", res.Status, err)
+		}
+		return fmt.Errorf("bad response from server: %s %s", res.Status, string(payload))
 	}
 
-	bytes, err := io.ReadAll(res.Body)
-	if err != nil {
-		logger.Error("could not read response", zap.Error(err))
-		return err
-	}
+	scanner := bufio.NewScanner(res.Body)
+	scanner.Split(bufio.ScanLines)
 
-	logger.Info("response from server", zap.ByteString("data", bytes))
+	for scanner.Scan() {
+		s := strings.TrimSpace(scanner.Text())
+		logger.Info("success", zap.String("data", s))
+	}
 
 	return nil
 }
