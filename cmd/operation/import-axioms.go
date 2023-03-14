@@ -1,4 +1,4 @@
-package importaxioms
+package operation
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func Cmd() *cobra.Command {
+func importAxiomsCommand() *cobra.Command {
 	var cmd cobra.Command
 	var datastore string
 	var srcGraph string
