@@ -16,7 +16,7 @@ func ImportAxioms(ctx context.Context, protocol, server, role, password, datasto
 
 	logger.Debug("building url...")
 
-	url := fmt.Sprint(protocol, "://", server, "/datastores/", datastore, "/context?operation=add-axioms&source-graph=", srcGraph, "&detination-graph=", dstGraph)
+	url := fmt.Sprint(protocol, "://", server, "/datastores/", datastore, "/content?operation=add-axioms&source-graph=", srcGraph, "&detination-graph=", dstGraph)
 
 	logger.Debug("url built", zap.String("url", url))
 	logger.Debug("building request...")
