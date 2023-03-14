@@ -11,9 +11,9 @@ func TestContextUtils(t *testing.T) {
 
 	ctx := context.TODO()
 
-	ctx = AddToContext(ctx, key, value)
+	ctx = addToContext(ctx, key, value)
 
-	got := GetFromContext(ctx, key)
+	got := getFromContext(ctx, key)
 
 	if value != got {
 		t.Errorf("want = %v, got %v", value, got)
