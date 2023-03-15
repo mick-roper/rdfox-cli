@@ -12,6 +12,8 @@ import (
 	"go.uber.org/zap"
 )
 
+type statistics map[string]map[string]interface{}
+
 func GetStats(ctx context.Context, server, protocol, role, password, datastore string) (statistics, error) {
 	logger := utils.LoggerFromContext(ctx)
 	client := utils.HttpClientFromContext(ctx)
@@ -36,7 +38,7 @@ func GetStats(ctx context.Context, server, protocol, role, password, datastore s
 	req.Header.Set("Authorization", utils.BasicAuthHeaderValue(role, password))
 	req.Header.Set("Accept", "*/*")
 
-	logger.Debug("request built", utils.RequestToLoggerFields(req)...)
+	logger.Debug("request built", zap.Stringer("url", req.URL), zap.String("method", req.Method), zap.Any("headers", req.Header))
 	logger.Debug("making request...")
 
 	res, err := client.Do(req)
