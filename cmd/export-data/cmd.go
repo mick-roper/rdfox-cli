@@ -8,6 +8,7 @@ import (
 	"time"
 
 	v6 "github.com/mick-roper/rdfox-cli/rdfox/v6"
+	"github.com/mick-roper/rdfox-cli/ttl"
 	"github.com/mick-roper/rdfox-cli/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -111,60 +112,40 @@ func Cmd() *cobra.Command {
 			logger.Debug("file closed")
 		}()
 
-		logger.Debug("getting data...")
+		logger.Info("getting data...")
 
-		ttl, err := v6.ReadWithCursor(ctx, server, protocol, role, password, datastore, connectionID, cursorID, limit)
-		if err != nil {
-			logger.Error("could not read data", zap.Error(err))
-			return err
+		var triples map[string]map[string]string
+		var tickError error
+
+		readData := func() {
+			triples, tickError = v6.ReadWithCursor(ctx, server, protocol, role, password, datastore, connectionID, cursorID, limit)
 		}
 
-		logger.Debug("got data from the server!")
-		logger.Debug("writing file...")
+		doWithTicker(readData, func() {
+			logger.Info("still getting data...")
+		})
 
-		tick := time.Tick(time.Second * 1)
-		stop := make(chan struct{})
-
-		go func() {
-			for {
-				select {
-				case <-tick:
-					logger.Debug("still writing file...")
-				case <-stop:
-					return
-				}
-			}
-		}()
-
-		for s, duples := range ttl {
-			if _, err := f.WriteString(s); err != nil {
-				return err
-			}
-
-			var x int
-
-			for p, o := range duples {
-				x++
-
-				str := fmt.Sprint("\n\t", p, "\t", o)
-
-				if _, err := f.WriteString(str); err != nil {
-					return err
-				}
-
-				if x < len(duples) {
-					f.WriteString(";")
-				} else {
-					f.WriteString(".")
-				}
-			}
-
-			f.WriteString("\n")
+		if tickError != nil {
+			logger.Error("could not get data", zap.Error(err))
+			return tickError
 		}
 
-		close(stop)
+		logger.Info("got data from the server!")
+		logger.Info("writing export data file...")
 
-		logger.Debug("file written!")
+		writeFile := func() {
+			tickError = ttl.Write(triples, f)
+		}
+
+		doWithTicker(writeFile, func() {
+			logger.Info("still writing file...")
+		})
+
+		if tickError != nil {
+			return tickError
+		}
+
+		logger.Info("export file written!")
 
 		return nil
 	}
@@ -198,4 +179,23 @@ func openExportFile(path string) (*os.File, error) {
 	}
 
 	return os.Create(path)
+}
+
+func doWithTicker(action func(), onTick func()) {
+	tick := time.Tick(time.Second * 1)
+	stop := make(chan struct{})
+	defer close(stop)
+
+	go func() {
+		for {
+			select {
+			case <-tick:
+				onTick()
+			case <-stop:
+				return
+			}
+		}
+	}()
+
+	action()
 }
