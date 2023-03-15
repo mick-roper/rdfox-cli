@@ -141,11 +141,17 @@ func Cmd() *cobra.Command {
 					})
 
 					logger.Info("write complete")
+				default:
+					// drop out
+				}
+
+				select {
 				case <-readDoneChan:
 					writeDoneChan <- struct{}{}
 					return
+				default:
+					// drop out
 				}
-
 			}
 		}()
 
@@ -158,7 +164,6 @@ func Cmd() *cobra.Command {
 
 			if err := v6.ReadWithCursor(ctx, server, protocol, role, password, datastore, connectionID, cursorID, limit, handle); err != nil {
 				errChan <- err
-				return
 			}
 
 			logger.Info("read complete")
@@ -170,12 +175,14 @@ func Cmd() *cobra.Command {
 			logger.Info("still getting data...")
 		})
 
-		select {
-		case err := <-errChan:
-			logger.Error("export failed", zap.Error(err))
-			return err
-		case <-writeDoneChan:
-			return nil
+		for {
+			select {
+			case err := <-errChan:
+				logger.Error("export failed", zap.Error(err))
+				return err
+			case <-writeDoneChan:
+				return nil
+			}
 		}
 	}
 
