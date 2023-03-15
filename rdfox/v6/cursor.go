@@ -123,13 +123,13 @@ func DeleteCursor(ctx context.Context, server, protocol, role, password, datasto
 	return nil
 }
 
-func ReadWithCursor(ctx context.Context, server, protocol, role, password, datastore, connectionID, cursorID string, limit int) (map[string]map[string][]string, error) {
+func ReadWithCursor(ctx context.Context, server, protocol, role, password, datastore, connectionID, cursorID string, limit int, gotData func(map[string]map[string][]string)) error {
 	logger := utils.LoggerFromContext(ctx).With(zap.String("op", "advance-cursor"), zap.String("connection-id", connectionID), zap.String("cursor-id", cursorID))
 	client := utils.HttpClientFromContext(ctx)
 
-	var useCursor func(op string, data map[string]map[string][]string) (map[string]map[string][]string, error)
+	var read func(op string) error
 
-	useCursor = func(op string, data map[string]map[string][]string) (map[string]map[string][]string, error) {
+	read = func(op string) error {
 		logger.Debug("building url...")
 
 		url := fmt.Sprintf("%s://%s/datastores/%s/connections/%s/cursors/%s?operation=%s&limit=%d", protocol, server, datastore, connectionID, cursorID, op, limit)
@@ -140,7 +140,7 @@ func ReadWithCursor(ctx context.Context, server, protocol, role, password, datas
 		req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, nil)
 		if err != nil {
 			logger.Error("could not build request", zap.Error(err))
-			return nil, err
+			return err
 		}
 
 		req.Header.Set("Authorization", utils.BasicAuthHeaderValue(role, password))
@@ -152,7 +152,7 @@ func ReadWithCursor(ctx context.Context, server, protocol, role, password, datas
 		res, err := client.Do(req)
 		if err != nil {
 			logger.Error("could not execute request", zap.Error(err))
-			return nil, err
+			return err
 		}
 
 		defer func() {
@@ -168,14 +168,15 @@ func ReadWithCursor(ctx context.Context, server, protocol, role, password, datas
 			bytes, err := io.ReadAll(res.Body)
 			if err != nil {
 				logger.Error("could not read response body", zap.Error(err))
-				return nil, fmt.Errorf("bad response from server: %s - COULD NOT READ RESPONSE BODY: %s", res.Status, err)
+				return fmt.Errorf("bad response from server: %s - COULD NOT READ RESPONSE BODY: %s", res.Status, err)
 			}
 
-			return nil, fmt.Errorf("bad response from server: %s - %s", res.Status, string(bytes))
+			return fmt.Errorf("bad response from server: %s - %s", res.Status, string(bytes))
 		}
 
 		logger.Debug("processing records...")
 
+		data := map[string]map[string][]string{}
 		var i int
 		scanner := bufio.NewScanner(res.Body)
 		scanner.Split(bufio.ScanLines)
@@ -204,14 +205,16 @@ func ReadWithCursor(ctx context.Context, server, protocol, role, password, datas
 
 		if i == 0 {
 			logger.Debug("no more data to process")
-			return data, nil
+			return nil
 		}
 
-		logger.Debug("processing complete", zap.Int("count", i))
+		logger.Debug("processed triples", zap.Int("count", i))
+
+		gotData(data)
 
 		logger.Debug("cursor has more data - advancing the cursor")
-		return useCursor("advance", data)
+		return read("advance")
 	}
 
-	return useCursor("open", map[string]map[string][]string{})
+	return read("open")
 }

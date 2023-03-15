@@ -113,41 +113,70 @@ func Cmd() *cobra.Command {
 
 		logger.Info("getting data...")
 
-		var triples map[string]map[string][]string
-		var tickError error
+		dataChan := make(chan map[string]map[string][]string)
+		errChan := make(chan error)
+		readDoneChan := make(chan struct{})
+		writeDoneChan := make(chan struct{})
+
+		defer close(dataChan)
+		defer close(errChan)
+		defer close(readDoneChan)
+		defer close(writeDoneChan)
+
+		go func() {
+			for {
+				select {
+				case triples := <-dataChan:
+					writeFile := func() {
+						if err := ttl.Write(triples, f); err != nil {
+							errChan <- err
+							return
+						}
+					}
+
+					logger.Info("writing data to file...")
+
+					utils.DoWithTicker(writeFile, func() {
+						logger.Info("still writing file...")
+					})
+
+					logger.Info("write complete")
+				case <-readDoneChan:
+					writeDoneChan <- struct{}{}
+					return
+				}
+
+			}
+		}()
 
 		readData := func() {
-			triples, tickError = v6.ReadWithCursor(ctx, server, protocol, role, password, datastore, connectionID, cursorID, limit)
+			handle := func(data map[string]map[string][]string) {
+				dataChan <- data
+			}
+
+			logger.Info("reading data from the server...")
+
+			if err := v6.ReadWithCursor(ctx, server, protocol, role, password, datastore, connectionID, cursorID, limit, handle); err != nil {
+				errChan <- err
+				return
+			}
+
+			logger.Info("read complete")
+
+			readDoneChan <- struct{}{}
 		}
 
 		utils.DoWithTicker(readData, func() {
 			logger.Info("still getting data...")
 		})
 
-		if tickError != nil {
-			logger.Error("could not get data", zap.Error(err))
-			return tickError
+		select {
+		case err := <-errChan:
+			logger.Error("export failed", zap.Error(err))
+			return err
+		case <-writeDoneChan:
+			return nil
 		}
-
-		logger.Info("got data from the server!")
-		logger.Info("writing export data file...")
-
-		writeFile := func() {
-			tickError = ttl.Write(triples, f)
-		}
-
-		utils.DoWithTicker(writeFile, func() {
-			logger.Info("still writing file...")
-		})
-
-		if tickError != nil {
-			logger.Error("could not write the file", zap.Error(err))
-			return tickError
-		}
-
-		logger.Info("export file written!")
-
-		return nil
 	}
 
 	return &cmd
