@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
+	"time"
 
 	v6 "github.com/mick-roper/rdfox-cli/rdfox/v6"
 	"github.com/mick-roper/rdfox-cli/utils"
@@ -17,7 +19,7 @@ func Cmd() *cobra.Command {
 	var datastore string
 	var filePath string
 	var limit int
-	var query string
+	var graph string
 
 	cmd.Use = "export-data"
 	cmd.Short = "export data from the database"
@@ -26,15 +28,15 @@ func Cmd() *cobra.Command {
 	cmd.Flags().StringVar(&datastore, "datastore", "", "the datastore that contains the data you want to export")
 	cmd.Flags().StringVar(&filePath, "file", "export.ttl", "the file that the exported data will be written to")
 	cmd.Flags().IntVar(&limit, "limit", 5000, "the maximum number of triples to return in a single cursor request")
-	cmd.Flags().StringVar(&query, "query", "", "the sparql query that will be used to select data to export")
+	cmd.Flags().StringVar(&graph, "graph", "", "the graph that contains the data you want to export")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if datastore == "" {
 			return errors.New("datastore is unset")
 		}
 
-		if query == "" {
-			return errors.New("query is unset")
+		if graph == "" {
+			return errors.New("graph is unset")
 		}
 
 		ctx := cmd.Context()
@@ -67,6 +69,11 @@ func Cmd() *cobra.Command {
 		}()
 
 		logger.Debug("connection created", zap.String("connection-id", connectionID))
+
+		logger.Debug("building query...")
+		query := fmt.Sprintf("SELECT ?s ?p ?o FROM %s WHERE { ?s ?p ?o }", graph)
+		logger.Debug("query built", zap.String("query", query))
+
 		logger.Debug("creating a cursor...")
 
 		cursorID, err := v6.CreateCursor(ctx, server, protocol, role, password, datastore, connectionID, query)
@@ -115,9 +122,21 @@ func Cmd() *cobra.Command {
 		logger.Debug("got data from the server!")
 		logger.Debug("writing file...")
 
-		for s, duples := range ttl {
-			logger.Debug("writing subject to file...", zap.String("subject", s))
+		tick := time.Tick(time.Second * 1)
+		stop := make(chan struct{})
 
+		go func() {
+			for {
+				select {
+				case <-tick:
+					logger.Debug("still writing file...")
+				case <-stop:
+					return
+				}
+			}
+		}()
+
+		for s, duples := range ttl {
 			if _, err := f.WriteString(s); err != nil {
 				return err
 			}
@@ -128,6 +147,7 @@ func Cmd() *cobra.Command {
 				x++
 
 				str := fmt.Sprint("\n\t", p, "\t", o)
+
 				if _, err := f.WriteString(str); err != nil {
 					return err
 				}
@@ -141,6 +161,8 @@ func Cmd() *cobra.Command {
 
 			f.WriteString("\n")
 		}
+
+		close(stop)
 
 		logger.Debug("file written!")
 
@@ -168,6 +190,10 @@ func openExportFile(path string) (*os.File, error) {
 	}
 
 	if !os.IsNotExist(err) {
+		return nil, err
+	}
+
+	if err := os.MkdirAll(filepath.Dir(path), 0770); err != nil {
 		return nil, err
 	}
 
