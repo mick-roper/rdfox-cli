@@ -3,6 +3,9 @@ package cmd
 import (
 	"context"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/mick-roper/rdfox-cli/cmd/config"
@@ -55,12 +58,37 @@ func Execute(currentVersion string) int {
 		return nil
 	}
 
-	if err := cmd.ExecuteContext(ctx); err != nil {
-		utils.LoggerFromContext(cmd.Context()).Error("execution failed", zap.Error(err))
-		return 1
+	okChan := make(chan struct{})
+	errChan := make(chan error)
+	sigChan := make(chan os.Signal)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	defer close(okChan)
+	defer close(errChan)
+	defer close(sigChan)
+
+	go func() {
+		if err := cmd.ExecuteContext(ctx); err != nil {
+			errChan <- err
+			return
+		}
+
+		okChan <- struct{}{}
+	}()
+
+	var exitCode int
+
+	select {
+	case <-okChan:
+		exitCode = 0
+	case <-sigChan:
+		exitCode = 0
+	case err := <-errChan:
+		utils.LoggerFromContext(ctx).Error("execution failed", zap.Error(err))
+		exitCode = 1
 	}
 
-	return 0
+	return exitCode
 }
 
 func newRootCommand(ctx context.Context) *cobra.Command {
