@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	v6 "github.com/mick-roper/rdfox-cli/rdfox/v6"
 	"github.com/mick-roper/rdfox-cli/ttl"
@@ -121,7 +120,7 @@ func Cmd() *cobra.Command {
 			triples, tickError = v6.ReadWithCursor(ctx, server, protocol, role, password, datastore, connectionID, cursorID, limit)
 		}
 
-		doWithTicker(readData, func() {
+		utils.DoWithTicker(readData, func() {
 			logger.Info("still getting data...")
 		})
 
@@ -137,11 +136,12 @@ func Cmd() *cobra.Command {
 			tickError = ttl.Write(triples, f)
 		}
 
-		doWithTicker(writeFile, func() {
+		utils.DoWithTicker(writeFile, func() {
 			logger.Info("still writing file...")
 		})
 
 		if tickError != nil {
+			logger.Error("could not write the file", zap.Error(err))
 			return tickError
 		}
 
@@ -179,23 +179,4 @@ func openExportFile(path string) (*os.File, error) {
 	}
 
 	return os.Create(path)
-}
-
-func doWithTicker(action func(), onTick func()) {
-	tick := time.Tick(time.Second * 1)
-	stop := make(chan struct{})
-	defer close(stop)
-
-	go func() {
-		for {
-			select {
-			case <-tick:
-				onTick()
-			case <-stop:
-				return
-			}
-		}
-	}()
-
-	action()
 }
