@@ -31,7 +31,7 @@ func ImportAxioms(ctx context.Context, protocol, server, role, password, datasto
 
 	req.Header.Set("Authorization", utils.BasicAuthHeaderValue(role, password))
 
-	logger.Debug("request built", zap.Stringer("url", req.URL), zap.Any("headers", req.Header), zap.String("method", req.Method))
+	logger.Debug("request built", utils.RequestToLoggerFields(req)...)
 
 	logger.Debug("making request...")
 
