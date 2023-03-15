@@ -113,7 +113,7 @@ func Cmd() *cobra.Command {
 
 		logger.Info("getting data...")
 
-		var triples map[string]map[string]string
+		var triples map[string]map[string][]string
 		var tickError error
 
 		readData := func() {

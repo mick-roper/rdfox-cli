@@ -5,32 +5,37 @@ import (
 	"io"
 )
 
-type triples map[string]map[string]string
+type triples map[string]map[string][]string
 
 func Write(data triples, dst io.Writer) error {
 	var buffer bytes.Buffer
 	for s, duples := range data {
 		buffer.WriteString(s)
 
-		var x int
+		var i int
+		var dCount int
 
-		for p, o := range duples {
-			x++
-
-			buffer.WriteString("\n\t")
-			buffer.WriteString(p)
-			buffer.WriteRune('\t')
-			buffer.WriteString(o)
-			buffer.WriteRune(' ')
-
-			if x < len(duples) {
-				buffer.WriteRune(';')
-			} else {
-				buffer.WriteRune('.')
-			}
+		for _, objects := range duples {
+			dCount += len(objects)
 		}
 
-		buffer.WriteRune('\n')
+		for p, objects := range duples {
+			for _, o := range objects {
+				i++
+				buffer.WriteString("\n\t")
+				buffer.WriteString(p)
+				buffer.WriteRune('\t')
+				buffer.WriteString(o)
+				buffer.WriteRune('\t')
+
+				if i < dCount {
+					buffer.WriteRune(';')
+				}
+			}
+
+		}
+
+		buffer.WriteString(".\n")
 
 		if _, err := dst.Write(buffer.Bytes()); err != nil {
 			return err

@@ -123,13 +123,13 @@ func DeleteCursor(ctx context.Context, server, protocol, role, password, datasto
 	return nil
 }
 
-func ReadWithCursor(ctx context.Context, server, protocol, role, password, datastore, connectionID, cursorID string, limit int) (map[string]map[string]string, error) {
+func ReadWithCursor(ctx context.Context, server, protocol, role, password, datastore, connectionID, cursorID string, limit int) (map[string]map[string][]string, error) {
 	logger := utils.LoggerFromContext(ctx).With(zap.String("op", "advance-cursor"), zap.String("connection-id", connectionID), zap.String("cursor-id", cursorID))
 	client := utils.HttpClientFromContext(ctx)
 
-	var useCursor func(op string, data map[string]map[string]string) (map[string]map[string]string, error)
+	var useCursor func(op string, data map[string]map[string][]string) (map[string]map[string][]string, error)
 
-	useCursor = func(op string, data map[string]map[string]string) (map[string]map[string]string, error) {
+	useCursor = func(op string, data map[string]map[string][]string) (map[string]map[string][]string, error) {
 		logger.Debug("building url...")
 
 		url := fmt.Sprintf("%s://%s/datastores/%s/connections/%s/cursors/%s?operation=%s&limit=%d", protocol, server, datastore, connectionID, cursorID, op, limit)
@@ -190,10 +190,14 @@ func ReadWithCursor(ctx context.Context, server, protocol, role, password, datas
 			o := chunks[2]
 
 			if _, ok := data[s]; !ok {
-				data[s] = map[string]string{}
+				data[s] = map[string][]string{}
 			}
 
-			data[s][p] = o
+			if _, ok := data[s][p]; !ok {
+				data[s][p] = []string{}
+			}
+
+			data[s][p] = append(data[s][p], o)
 
 			i++
 		}
@@ -209,5 +213,5 @@ func ReadWithCursor(ctx context.Context, server, protocol, role, password, datas
 		return useCursor("advance", data)
 	}
 
-	return useCursor("open", map[string]map[string]string{})
+	return useCursor("open", map[string]map[string][]string{})
 }
