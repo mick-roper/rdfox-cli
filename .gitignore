@@ -22,3 +22,6 @@ go.work
 
 # output
 bin/
+
+# temporary files
+tmp/
