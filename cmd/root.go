@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/mick-roper/rdfox-cli/cmd/config"
 	exportdata "github.com/mick-roper/rdfox-cli/cmd/export-data"
@@ -21,8 +20,7 @@ import (
 )
 
 func Execute(currentVersion string) int {
-	ctx := context.TODO()
-	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
+	ctx, cancel := context.WithCancel(context.TODO())
 
 	defer cancel()
 
