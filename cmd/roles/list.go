@@ -19,9 +19,13 @@ func listRoles() *cobra.Command {
 		ctx := cmd.Context()
 		logger := utils.LoggerFromContext(ctx)
 
-		logger.Debug("getting roles...")
+		logger.Debug("getting root flags...")
 
 		r := utils.RootCommandFlags(cmd)
+
+		logger.Debug("got root command flags", zap.Any("flags", r))
+		logger.Debug("getting roles...")
+
 		roles, err := v6.GetRoles(ctx, r.Server, r.Protocol, r.Role, r.Password)
 		if err != nil {
 			logger.Error("coudl not get roles", zap.Error(err))
