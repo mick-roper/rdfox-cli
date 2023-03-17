@@ -14,6 +14,7 @@ func Cmd() *cobra.Command {
 	cmd.AddCommand(deleteRole())
 	cmd.AddCommand(grantPrivileges())
 	cmd.AddCommand(revokePrivileges())
+	cmd.AddCommand(getInfo())
 
 	return &cmd
 }

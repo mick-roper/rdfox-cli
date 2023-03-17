@@ -194,3 +194,58 @@ func updateDatastoreAccessTypes(ctx context.Context, server, protocol, role, pas
 
 	return nil
 }
+
+func ListPrivileges(ctx context.Context, server, protocol, role, password, targetRole string) (map[string][]string, error) {
+	logger := utils.LoggerFromContext(ctx)
+	client := utils.HttpClientFromContext(ctx)
+
+	logger.Debug("building url...")
+
+	url := fmt.Sprint(protocol, "://", server, "/roles/", targetRole, "/privileges")
+
+	logger.Debug("url built", zap.String("url", url))
+	logger.Debug("building request...")
+
+	req, err := utils.NewRequest(http.MethodGet, url, role, password, nil)
+	if err != nil {
+		logger.Error("could not build request", zap.Error(err))
+		return nil, err
+	}
+
+	req.Header.Set("Accept", "text/csv")
+
+	logger.Debug("request built", utils.RequestToLoggerFields(req)...)
+	logger.Debug("making request...")
+
+	res, err := client.Do(req)
+	if err != nil {
+		logger.Error("could not make request", zap.Error(err))
+		return nil, err
+	}
+
+	defer res.Body.Close()
+
+	logger.Debug("got response", utils.ResponseToLoggerFields(res)...)
+
+	if res.StatusCode != http.StatusOK {
+		logger.Error("bad response from server", zap.String("status", res.Status))
+		return nil, fmt.Errorf("bad response from server: %s", res.Status)
+	}
+
+	p := map[string][]string{}
+
+	scanner := bufio.NewScanner(res.Body)
+	scanner.Split(bufio.ScanLines)
+	scanner.Scan()
+
+	for scanner.Scan() {
+		t := scanner.Text()
+		parts := strings.Split(t, ",")
+		resource := parts[0]
+		accessTypes := parts[1:]
+
+		p[resource] = accessTypes
+	}
+
+	return p, nil
+}
