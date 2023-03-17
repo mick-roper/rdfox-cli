@@ -1,8 +1,6 @@
 package roles
 
 import (
-	"fmt"
-
 	v6 "github.com/mick-roper/rdfox-cli/rdfox/v6"
 	"github.com/mick-roper/rdfox-cli/utils"
 	"github.com/spf13/cobra"
@@ -28,15 +26,13 @@ func listRoles() *cobra.Command {
 
 		roles, err := v6.GetRoles(ctx, r.Server, r.Protocol, r.Role, r.Password)
 		if err != nil {
-			logger.Error("coudl not get roles", zap.Error(err))
+			logger.Error("could not get roles", zap.Error(err))
 			return err
 		}
 
 		logger.Debug("got roles", zap.Int("count", len(roles)))
 
-		for _, role := range roles {
-			fmt.Println(role)
-		}
+		logger.Info("got roles", zap.Any("roles", roles))
 
 		return nil
 	}
