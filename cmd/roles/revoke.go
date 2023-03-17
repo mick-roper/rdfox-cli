@@ -42,7 +42,7 @@ func revokePrivileges() *cobra.Command {
 		logger.Debug("got root command flags", zap.Any("flags", r))
 		logger.Debug("revoking privileges...")
 
-		if err := v6.RevokeDatastorePrivileges(ctx, r.Server, r.Protocol, r.Role, r.Server, roleToUpdate, accessTypes); err != nil {
+		if err := v6.RevokeDatastorePrivileges(ctx, r.Server, r.Protocol, r.Role, r.Password, roleToUpdate, accessTypes); err != nil {
 			logger.Error("could not update role", zap.Error(err))
 			return err
 		}

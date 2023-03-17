@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -142,19 +143,19 @@ func DeleteRole(ctx context.Context, server, protocol, role, password, roleToDel
 }
 
 func GrantDatastorePrivileges(ctx context.Context, server, protocol, role, password, targetRole, accessTypes string) error {
-	return updateDatastoreAccessTypes(ctx, server, protocol, role, password, targetRole, "add", accessTypes)
+	return updateDatastoreAccessTypes(ctx, server, protocol, role, password, targetRole, "grant", accessTypes)
 }
 
 func RevokeDatastorePrivileges(ctx context.Context, server, protocol, role, password, targetRole, accessTypes string) error {
-	return updateDatastoreAccessTypes(ctx, server, protocol, role, password, targetRole, "delete", accessTypes)
+	return updateDatastoreAccessTypes(ctx, server, protocol, role, password, targetRole, "revoke", accessTypes)
 }
 
 func updateDatastoreAccessTypes(ctx context.Context, server, protocol, role, password, targetRole, operation, accessTypes string) error {
 	logger := utils.LoggerFromContext(ctx)
 	client := utils.HttpClientFromContext(ctx)
 
-	if operation != "add" && operation != "delete" {
-		return errors.New("only 'add' and 'delete' operations are supported")
+	if operation != "grant" && operation != "revoke" {
+		return errors.New("only 'grant' and 'revoke' operations are supported")
 	}
 
 	logger.Debug("building url...")
@@ -175,7 +176,7 @@ func updateDatastoreAccessTypes(ctx context.Context, server, protocol, role, pas
 		return err
 	}
 
-	req.Header.Set("Content-Type", "x-www-form-urlencoded")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	logger.Debug("request built", utils.RequestToLoggerFields(req)...)
 	logger.Debug("making request...")
@@ -191,7 +192,9 @@ func updateDatastoreAccessTypes(ctx context.Context, server, protocol, role, pas
 	logger.Debug("got response", utils.ResponseToLoggerFields(res)...)
 
 	if res.StatusCode != http.StatusOK {
-		logger.Error("bad response from server", zap.String("status", res.Status))
+		bytes, _ := io.ReadAll(res.Body)
+
+		logger.Error("bad response from server", zap.String("status", res.Status), zap.ByteString("content", bytes))
 		return fmt.Errorf("bad response from server: %s", res.Status)
 	}
 
