@@ -99,3 +99,41 @@ func CreateRole(ctx context.Context, server, protocol, role, password, newRoleNa
 
 	return nil
 }
+
+func DeleteRole(ctx context.Context, server, protocol, role, password, roleToDelete string) error {
+	logger := utils.LoggerFromContext(ctx)
+	client := utils.HttpClientFromContext(ctx)
+
+	logger.Debug("building url...")
+
+	url := fmt.Sprint(protocol, "://", server, "/roles/", roleToDelete)
+
+	logger.Debug("url built", zap.String("url", url))
+	logger.Debug("building request...")
+
+	req, err := utils.NewRequest(http.MethodDelete, url, role, password, nil)
+	if err != nil {
+		logger.Error("could not build request", zap.Error(err))
+		return err
+	}
+
+	logger.Debug("request built", utils.RequestToLoggerFields(req)...)
+	logger.Debug("making request...")
+
+	res, err := client.Do(req)
+	if err != nil {
+		logger.Error("could not make request", zap.Error(err))
+		return err
+	}
+
+	defer res.Body.Close()
+
+	logger.Debug("got response", utils.ResponseToLoggerFields(res)...)
+
+	if res.StatusCode != http.StatusNoContent {
+		logger.Error("bad response from server", zap.String("status", res.Status))
+		return fmt.Errorf("bad response from server: %s", res.Status)
+	}
+
+	return nil
+}
