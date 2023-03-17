@@ -21,3 +21,14 @@ func StringPrompt(label string) string {
 
 	return strings.TrimSpace(s)
 }
+
+func BoolPrompt(label string) bool {
+	const suffix = " (type 'yes' to continue)"
+	if !strings.HasSuffix(label, suffix) {
+		label = fmt.Sprint(label, suffix)
+	}
+
+	s := strings.ToLower(StringPrompt(label))
+
+	return s == "yes"
+}

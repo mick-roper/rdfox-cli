@@ -49,7 +49,7 @@ func createRole() *cobra.Command {
 
 		logger.Debug("role created")
 
-		fmt.Printf("role created")
+		logger.Info("role created")
 
 		return nil
 	}
