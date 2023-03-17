@@ -79,6 +79,8 @@ func CreateRole(ctx context.Context, server, protocol, role, password, newRoleNa
 		return err
 	}
 
+	req.Header.Set("Content-Type", "text/plain")
+
 	logger.Debug("request built", utils.RequestToLoggerFields(req)...)
 	logger.Debug("making request...")
 

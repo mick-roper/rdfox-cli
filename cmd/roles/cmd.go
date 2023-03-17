@@ -10,6 +10,7 @@ func Cmd() *cobra.Command {
 	cmd.Long = "provides role management functionality"
 
 	cmd.AddCommand(listRoles())
+	cmd.AddCommand(createRole())
 
 	return &cmd
 }
