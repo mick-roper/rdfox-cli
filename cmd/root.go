@@ -10,6 +10,7 @@ import (
 	"github.com/mick-roper/rdfox-cli/cmd/config"
 	exportdata "github.com/mick-roper/rdfox-cli/cmd/export-data"
 	"github.com/mick-roper/rdfox-cli/cmd/operation"
+	"github.com/mick-roper/rdfox-cli/cmd/roles"
 	"github.com/mick-roper/rdfox-cli/cmd/stats"
 	"github.com/mick-roper/rdfox-cli/cmd/version"
 	configuration "github.com/mick-roper/rdfox-cli/config"
@@ -32,6 +33,7 @@ func Execute(currentVersion string) int {
 	cmd.AddCommand(config.Cmd())
 	cmd.AddCommand(operation.Cmd())
 	cmd.AddCommand(exportdata.Cmd())
+	cmd.AddCommand(roles.Cmd())
 
 	preRun := func(cmd *cobra.Command, _ []string) {
 		level := cmd.Flags().Lookup("log-level").Value.String()

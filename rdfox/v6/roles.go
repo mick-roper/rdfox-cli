@@ -3,7 +3,6 @@ package v6
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -59,5 +58,5 @@ func GetRoles(ctx context.Context, server, protocol, role, password string) ([]s
 
 	logger.Debug("response parsed!")
 
-	return nil, errors.New("not implemented")
+	return roles, nil
 }
