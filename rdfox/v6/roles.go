@@ -162,9 +162,12 @@ func updateDatastoreAccessTypes(ctx context.Context, server, protocol, role, pas
 	url := fmt.Sprint(protocol, "://", server, "/roles/", targetRole, "/privileges?operation=", operation)
 
 	logger.Debug("url built", zap.String("url", url))
-	logger.Debug("building request...")
+	logger.Debug("building body string...")
 
 	bodyString := fmt.Sprint("resource-specifier=|datastores&access-types=", accessTypes)
+
+	logger.Debug("body string built", zap.String("content", bodyString))
+	logger.Debug("building request...")
 
 	req, err := utils.NewRequest(http.MethodPatch, url, role, password, strings.NewReader(bodyString))
 	if err != nil {
