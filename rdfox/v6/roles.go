@@ -247,6 +247,11 @@ func ListPrivileges(ctx context.Context, server, protocol, role, password, targe
 	for scanner.Scan() {
 		t := scanner.Text()
 		parts := strings.Split(t, ",")
+
+		for i, p := range parts {
+			parts[i] = strings.Trim(p, " \"")
+		}
+
 		resource := parts[0]
 		accessTypes := parts[1:]
 
