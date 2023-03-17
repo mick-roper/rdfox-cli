@@ -42,6 +42,13 @@ func RequestToLoggerFields(req *http.Request) []zap.Field {
 	}
 }
 
+func ResponseToLoggerFields(res *http.Response) []zap.Field {
+	return []zap.Field{
+		zap.String("status", res.Status),
+		zap.Any("headers", res.Header),
+	}
+}
+
 func NewRequest(method, url, role, password string, body io.Reader) (*http.Request, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {

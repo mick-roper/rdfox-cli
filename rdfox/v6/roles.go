@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/mick-roper/rdfox-cli/utils"
 	"go.uber.org/zap"
@@ -38,7 +39,7 @@ func GetRoles(ctx context.Context, server, protocol, role, password string) ([]s
 
 	defer res.Body.Close()
 
-	logger.Debug("got response", zap.String("status", res.Status), zap.Any("headers", res.Header))
+	logger.Debug("got response", utils.ResponseToLoggerFields(res)...)
 
 	if res.StatusCode != http.StatusOK {
 		logger.Error("bad response from server", zap.String("status", res.Status))
@@ -59,4 +60,42 @@ func GetRoles(ctx context.Context, server, protocol, role, password string) ([]s
 	logger.Debug("response parsed!")
 
 	return roles, nil
+}
+
+func CreateRole(ctx context.Context, server, protocol, role, password, newRoleName, newRolePassword string) error {
+	logger := utils.LoggerFromContext(ctx)
+	client := utils.HttpClientFromContext(ctx)
+
+	logger.Debug("building url...")
+
+	url := fmt.Sprint(protocol, "://", server, "/roles/", newRoleName)
+
+	logger.Debug("url built", zap.String("url", url))
+	logger.Debug("building request...")
+
+	req, err := utils.NewRequest(http.MethodPost, url, role, password, strings.NewReader(newRolePassword))
+	if err != nil {
+		logger.Error("could not build request", zap.Error(err))
+		return err
+	}
+
+	logger.Debug("request built", utils.RequestToLoggerFields(req)...)
+	logger.Debug("making request...")
+
+	res, err := client.Do(req)
+	if err != nil {
+		logger.Error("could not make request", zap.Error(err))
+		return err
+	}
+
+	defer res.Body.Close()
+
+	logger.Debug("got response", utils.ResponseToLoggerFields(res)...)
+
+	if res.StatusCode != http.StatusCreated {
+		logger.Error("bad response from server", zap.String("status", res.Status))
+		return fmt.Errorf("bad response from server: %s", res.Status)
+	}
+
+	return nil
 }
