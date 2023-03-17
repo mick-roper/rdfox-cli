@@ -155,11 +155,7 @@ func ReadWithCursor(ctx context.Context, server, protocol, role, password, datas
 			return err
 		}
 
-		defer func() {
-			if err := res.Body.Close(); err != nil {
-				logger.Error("could not close response body", zap.Error(err))
-			}
-		}()
+		defer res.Body.Close()
 
 		logger.Debug("got response from server", zap.String("status", res.Status), zap.Any("header", res.Header))
 
@@ -202,6 +198,8 @@ func ReadWithCursor(ctx context.Context, server, protocol, role, password, datas
 
 			i++
 		}
+
+		res.Body.Close()
 
 		if i == 0 {
 			logger.Debug("no more data to process")
