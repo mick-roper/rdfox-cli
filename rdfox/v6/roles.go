@@ -165,7 +165,11 @@ func updateDatastoreAccessTypes(ctx context.Context, server, protocol, role, pas
 	logger.Debug("url built", zap.String("url", url))
 	logger.Debug("building body string...")
 
-	bodyString := fmt.Sprintf("resource-specifier=|datastores|%s|%s&access-types=%s", datastore, resource, accessTypes)
+	bodyString := fmt.Sprintf("resource-specifier=>datastores|%s&access-types=%s", datastore, accessTypes)
+
+	if resource != "*" {
+		bodyString = fmt.Sprintf("resource-specifier=|datastores|%s|%s&access-types=%s", datastore, resource, accessTypes)
+	}
 
 	logger.Debug("body string built", zap.String("content", bodyString))
 	logger.Debug("building request...")
