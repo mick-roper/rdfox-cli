@@ -16,10 +16,12 @@ func revokePrivileges() *cobra.Command {
 	cmd.Short = "revoke privileges from a role"
 
 	var roleToUpdate string
+	var datastore string
 	var accessTypes string
 
-	cmd.Flags().StringVar(&roleToUpdate, "role-to-update", "", "the name of the role to revoke privileges from")
-	cmd.Flags().StringVar(&accessTypes, "access-types", "", "the access types this role should have revoked")
+	cmd.Flags().StringVar(&roleToUpdate, "role-to-update", "", "the name of the role to grant privileges to")
+	cmd.Flags().StringVar(&datastore, "datastore", "", "the datastore these privileges apply to")
+	cmd.Flags().StringVar(&accessTypes, "access-types", "", "the access types this role should have")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
@@ -27,6 +29,11 @@ func revokePrivileges() *cobra.Command {
 
 		if roleToUpdate == "" {
 			logger.Error("arg not set", zap.String("arg", "role-to-update"))
+			return errors.New("arg not set")
+		}
+
+		if datastore == "" {
+			logger.Error("arg not set", zap.String("arg", "datastore"))
 			return errors.New("arg not set")
 		}
 
@@ -42,7 +49,7 @@ func revokePrivileges() *cobra.Command {
 		logger.Debug("got root command flags", zap.Any("flags", r))
 		logger.Debug("revoking privileges...")
 
-		if err := v6.RevokeDatastorePrivileges(ctx, r.Server, r.Protocol, r.Role, r.Password, roleToUpdate, accessTypes); err != nil {
+		if err := v6.RevokeDatastorePrivileges(ctx, r.Server, r.Protocol, r.Role, r.Password, roleToUpdate, datastore, accessTypes); err != nil {
 			logger.Error("could not update role", zap.Error(err))
 			return err
 		}

@@ -142,15 +142,15 @@ func DeleteRole(ctx context.Context, server, protocol, role, password, roleToDel
 	return nil
 }
 
-func GrantDatastorePrivileges(ctx context.Context, server, protocol, role, password, targetRole, accessTypes string) error {
-	return updateDatastoreAccessTypes(ctx, server, protocol, role, password, targetRole, "grant", accessTypes)
+func GrantDatastorePrivileges(ctx context.Context, server, protocol, role, password, targetRole, datastore, accessTypes string) error {
+	return updateDatastoreAccessTypes(ctx, server, protocol, role, password, targetRole, "grant", datastore, accessTypes)
 }
 
-func RevokeDatastorePrivileges(ctx context.Context, server, protocol, role, password, targetRole, accessTypes string) error {
-	return updateDatastoreAccessTypes(ctx, server, protocol, role, password, targetRole, "revoke", accessTypes)
+func RevokeDatastorePrivileges(ctx context.Context, server, protocol, role, password, targetRole, datastore, accessTypes string) error {
+	return updateDatastoreAccessTypes(ctx, server, protocol, role, password, targetRole, "revoke", datastore, accessTypes)
 }
 
-func updateDatastoreAccessTypes(ctx context.Context, server, protocol, role, password, targetRole, operation, accessTypes string) error {
+func updateDatastoreAccessTypes(ctx context.Context, server, protocol, role, password, targetRole, operation, datastore, accessTypes string) error {
 	logger := utils.LoggerFromContext(ctx)
 	client := utils.HttpClientFromContext(ctx)
 
@@ -165,7 +165,7 @@ func updateDatastoreAccessTypes(ctx context.Context, server, protocol, role, pas
 	logger.Debug("url built", zap.String("url", url))
 	logger.Debug("building body string...")
 
-	bodyString := fmt.Sprint("resource-specifier=|datastores&access-types=", accessTypes)
+	bodyString := fmt.Sprintf("resource-specifier=|datastores|%s&access-types=%s", datastore, accessTypes)
 
 	logger.Debug("body string built", zap.String("content", bodyString))
 	logger.Debug("building request...")
