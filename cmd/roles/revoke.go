@@ -17,10 +17,12 @@ func revokePrivileges() *cobra.Command {
 
 	var roleToUpdate string
 	var datastore string
+	var resources string
 	var accessTypes string
 
 	cmd.Flags().StringVar(&roleToUpdate, "role-to-update", "", "the name of the role to grant privileges to")
 	cmd.Flags().StringVar(&datastore, "datastore", "", "the datastore these privileges apply to")
+	cmd.Flags().StringVar(&resources, "resources", "*", "the resources these privileges apply to")
 	cmd.Flags().StringVar(&accessTypes, "access-types", "", "the access types this role should have")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -49,7 +51,7 @@ func revokePrivileges() *cobra.Command {
 		logger.Debug("got root command flags", zap.Any("flags", r))
 		logger.Debug("revoking privileges...")
 
-		if err := v6.RevokeDatastorePrivileges(ctx, r.Server, r.Protocol, r.Role, r.Password, roleToUpdate, datastore, accessTypes); err != nil {
+		if err := v6.RevokeDatastorePrivileges(ctx, r.Server, r.Protocol, r.Role, r.Password, roleToUpdate, datastore, resources, accessTypes); err != nil {
 			logger.Error("could not update role", zap.Error(err))
 			return err
 		}
