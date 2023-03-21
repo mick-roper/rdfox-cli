@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -39,4 +40,22 @@ func RequestToLoggerFields(req *http.Request) []zap.Field {
 		zap.String("method", req.Method),
 		zap.Any("headers", req.Header),
 	}
+}
+
+func ResponseToLoggerFields(res *http.Response) []zap.Field {
+	return []zap.Field{
+		zap.String("status", res.Status),
+		zap.Any("headers", res.Header),
+	}
+}
+
+func NewRequest(method, url, role, password string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", BasicAuthHeaderValue(role, password))
+
+	return req, nil
 }
