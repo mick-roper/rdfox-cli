@@ -1,5 +1,5 @@
 package v6
 
 type (
-	statistics map[string]map[string]interface{}
+	Statistics map[string]map[string]interface{}
 )
