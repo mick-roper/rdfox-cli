@@ -46,6 +46,8 @@ func Cmd() *cobra.Command {
 			return err
 		}
 
+		req.Header.Set("Content-Type", "text/plain")
+
 		logger.Debug("request built!", utils.RequestToLoggerFields(req)...)
 		logger.Debug("making request...")
 
