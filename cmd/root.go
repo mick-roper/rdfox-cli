@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/mick-roper/rdfox-cli/cmd/compact"
 	"github.com/mick-roper/rdfox-cli/cmd/config"
 	exportdata "github.com/mick-roper/rdfox-cli/cmd/export-data"
 	"github.com/mick-roper/rdfox-cli/cmd/operation"
@@ -34,7 +35,7 @@ func Execute(currentVersion string) int {
 	cmd.AddCommand(operation.Cmd())
 	cmd.AddCommand(exportdata.Cmd())
 	cmd.AddCommand(roles.Cmd())
-	cmd.AddCommand(config.Cmd())
+	cmd.AddCommand(compact.Cmd())
 
 	preRun := func(cmd *cobra.Command, _ []string) {
 		level := cmd.Flags().Lookup("log-level").Value.String()
