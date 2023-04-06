@@ -34,6 +34,7 @@ func Execute(currentVersion string) int {
 	cmd.AddCommand(operation.Cmd())
 	cmd.AddCommand(exportdata.Cmd())
 	cmd.AddCommand(roles.Cmd())
+	cmd.AddCommand(config.Cmd())
 
 	preRun := func(cmd *cobra.Command, _ []string) {
 		level := cmd.Flags().Lookup("log-level").Value.String()
