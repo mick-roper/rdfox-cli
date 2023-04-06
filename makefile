@@ -19,4 +19,4 @@ test:
 
 .PHONY: build
 build:
-	CGO_ENABLED=0 GOARCH=$(GOARCH) GOOS=$(GOOS) go build -ldflags="-s -w -X main.Version=$(VERSION)" -a -o bin/$(GOOS)/$(GOARCH)/app main.go
+	CGO_ENABLED=0 GOARCH=$(GOARCH) GOOS=$(GOOS) go build -ldflags="-s -w -X main.Version=$(VERSION)" -a -o bin/$(GOOS)/$(GOARCH)/rdfoxcli main.go
