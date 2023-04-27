@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func GetStats(ctx context.Context, server, protocol, role, password, datastore string) (statistics, error) {
+func GetStats(ctx context.Context, server, protocol, role, password, datastore string) (Statistics, error) {
 	logger := utils.LoggerFromContext(ctx)
 	client := utils.HttpClientFromContext(ctx)
 
@@ -56,11 +56,11 @@ func GetStats(ctx context.Context, server, protocol, role, password, datastore s
 	return parseStats(res.Body), nil
 }
 
-func parseStats(r io.Reader) statistics {
+func parseStats(r io.Reader) Statistics {
 	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanLines)
 
-	stats := statistics{}
+	stats := Statistics{}
 	thisComponent := ""
 	scanner.Split(bufio.ScanLines)
 
