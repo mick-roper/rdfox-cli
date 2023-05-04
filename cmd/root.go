@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/mick-roper/rdfox-cli/cmd/compact"
 	"github.com/mick-roper/rdfox-cli/cmd/config"
@@ -26,7 +27,11 @@ func Execute(currentVersion string) int {
 
 	defer cancel()
 
-	ctx = utils.AddHttpClientToContext(ctx, http.DefaultClient)
+	client := http.Client{
+		Timeout: time.Minute * 5,
+	}
+
+	ctx = utils.AddHttpClientToContext(ctx, &client)
 
 	cmd := newRootCommand(ctx)
 	cmd.AddCommand(version.Cmd(currentVersion))
