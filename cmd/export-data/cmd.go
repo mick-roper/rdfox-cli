@@ -121,7 +121,6 @@ func Cmd() *cobra.Command {
 		defer close(dataChan)
 		defer close(errChan)
 		defer close(readDoneChan)
-		defer close(writeDoneChan)
 
 		go func() {
 			for {
@@ -147,7 +146,7 @@ func Cmd() *cobra.Command {
 
 				select {
 				case <-readDoneChan:
-					writeDoneChan <- struct{}{}
+					close(writeDoneChan)
 					return
 				default:
 					// drop out
