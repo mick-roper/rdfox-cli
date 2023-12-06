@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	v6 "github.com/mick-roper/rdfox-cli/rdfox/v6"
 	"github.com/mick-roper/rdfox-cli/ttl"
@@ -39,6 +40,9 @@ func Cmd() *cobra.Command {
 			return errors.New("graph is unset")
 		}
 
+		graph = strings.TrimPrefix(graph, "<")
+		graph = strings.TrimSuffix(graph, ">")
+
 		ctx := cmd.Context()
 		logger := utils.LoggerFromContext(ctx)
 
@@ -71,7 +75,7 @@ func Cmd() *cobra.Command {
 		logger.Debug("connection created", zap.String("connection-id", connectionID))
 
 		logger.Debug("building query...")
-		query := fmt.Sprintf("SELECT ?s ?p ?o FROM %s WHERE { ?s ?p ?o }", graph)
+		query := fmt.Sprintf("SELECT ?s ?p ?o FROM <%s> WHERE { ?s ?p ?o }", graph)
 		logger.Debug("query built", zap.String("query", query))
 
 		logger.Debug("creating a cursor...")
@@ -114,48 +118,44 @@ func Cmd() *cobra.Command {
 		logger.Info("getting data...")
 
 		dataChan := make(chan map[string]map[string][]string)
-		errChan := make(chan error)
 		readDoneChan := make(chan struct{})
 		writeDoneChan := make(chan struct{})
 
-		defer close(dataChan)
-		defer close(errChan)
-		defer close(readDoneChan)
-		defer close(writeDoneChan)
-
-		go func() {
+		write := func() {
+			defer close(writeDoneChan)
 			for {
 				select {
 				case triples := <-dataChan:
-					writeFile := func() {
+					writeFile := func() error {
 						if err := ttl.Write(triples, f); err != nil {
-							errChan <- err
-							return
+							return err
 						}
+
+						return nil
 					}
 
 					logger.Info("writing data to file...")
 
-					utils.DoWithTicker(writeFile, func() {
+					if err := utils.DoWithTicker(writeFile, func() {
 						logger.Info("still writing file...")
-					})
+					}); err != nil {
+						logger.Error("could not write data", zap.Error(err))
+						return
+					}
 
 					logger.Info("write complete")
-				default:
-					// drop out
-				}
-
-				select {
 				case <-readDoneChan:
-					writeDoneChan <- struct{}{}
 					return
-				default:
-					// drop out
 				}
 			}
-		}()
+		}
 
-		readData := func() {
+		go write()
+
+		readData := func() error {
+			defer close(readDoneChan)
+			defer close(dataChan)
+
 			handle := func(data map[string]map[string][]string) {
 				dataChan <- data
 			}
@@ -163,27 +163,21 @@ func Cmd() *cobra.Command {
 			logger.Info("reading data from the server...")
 
 			if err := v6.ReadWithCursor(ctx, server, protocol, role, password, datastore, connectionID, cursorID, limit, handle); err != nil {
-				errChan <- err
+				return err
 			}
 
 			logger.Info("read complete")
 
-			readDoneChan <- struct{}{}
+			return nil
 		}
 
-		utils.DoWithTicker(readData, func() {
+		if err := utils.DoWithTicker(readData, func() {
 			logger.Info("still getting data...")
-		})
-
-		for {
-			select {
-			case err := <-errChan:
-				logger.Error("export failed", zap.Error(err))
-				return err
-			case <-writeDoneChan:
-				return nil
-			}
+		}); err != nil {
+			return err
 		}
+		<-writeDoneChan
+		return nil
 	}
 
 	return &cmd

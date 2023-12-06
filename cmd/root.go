@@ -65,9 +65,9 @@ func Execute(currentVersion string) int {
 		return nil
 	}
 
-	okChan := make(chan struct{})
-	errChan := make(chan error)
-	sigChan := make(chan os.Signal)
+	okChan := make(chan struct{}, 1)
+	errChan := make(chan error, 1)
+	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	defer close(okChan)
@@ -89,6 +89,7 @@ func Execute(currentVersion string) int {
 	case <-okChan:
 		exitCode = 0
 	case <-sigChan:
+		cancel()
 		exitCode = 0
 	case err := <-errChan:
 		utils.LoggerFromContext(ctx).Error("execution failed", zap.Error(err))

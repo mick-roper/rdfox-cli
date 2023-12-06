@@ -2,7 +2,7 @@ package utils
 
 import "time"
 
-func DoWithTicker(action func(), onTick func()) {
+func DoWithTicker(action func() error, onTick func()) error {
 	tick := time.Tick(time.Second * 1)
 	stop := make(chan struct{})
 	defer close(stop)
@@ -18,5 +18,5 @@ func DoWithTicker(action func(), onTick func()) {
 		}
 	}()
 
-	action()
+	return action()
 }
