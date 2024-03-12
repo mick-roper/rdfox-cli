@@ -49,14 +49,14 @@ func grantPrivileges() *cobra.Command {
 		r := utils.RootCommandFlags(cmd)
 
 		logger.Debug("got root command flags", zap.Any("flags", r))
-		logger.Debug("granting privileges...")
+		logger.Info("granting privileges...")
 
 		if err := v6.GrantDatastorePrivileges(ctx, r.Server, r.Protocol, r.Role, r.Password, roleToUpdate, datastore, resource, accessTypes); err != nil {
 			logger.Error("could not update role", zap.Error(err))
 			return err
 		}
 
-		logger.Debug("privileges have been updated")
+		logger.Info("privileges have been updated")
 
 		return nil
 	}
