@@ -182,6 +182,11 @@ func ReadWithCursor(ctx context.Context, server, protocol, role, password, datas
 
 			chunks := strings.Split(str, "\t")
 
+			if len(chunks) != 3 {
+				logger.Warn("row is the wrong size", zap.Int("row_index", i))
+				continue
+			}
+
 			s := string(chunks[0])
 			p := string(chunks[1])
 			o := chunks[2]
