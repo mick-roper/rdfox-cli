@@ -178,9 +178,7 @@ func ReadWithCursor(ctx context.Context, server, protocol, role, password, datas
 		scanner.Split(bufio.ScanLines)
 		scanner.Scan() // always do a dumb scan to skip the first line
 		for scanner.Scan() {
-			str := scanner.Text()
-
-			chunks := strings.Split(str, "\t")
+			chunks := strings.Split(scanner.Text(), "\t")
 
 			if len(chunks) != 3 {
 				logger.Warn("row is the wrong size", zap.Int("row_index", i))
