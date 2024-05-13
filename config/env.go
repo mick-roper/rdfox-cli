@@ -1,6 +1,9 @@
 package config
 
-import "os"
+import (
+	"os"
+	"strconv"
+)
 
 type envConfig struct{}
 
@@ -30,6 +33,16 @@ func (envConfig) LogLevel() string {
 	}
 
 	return "info"
+}
+
+func (envConfig) ServerVersion() int {
+	if s := os.Getenv("RDFOX_SERVER_VERSION"); s != "" {
+		if i, err := strconv.Atoi(s); err != nil {
+			return i
+		}
+	}
+
+	return 7
 }
 
 func FromEnv() Config {

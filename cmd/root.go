@@ -118,6 +118,7 @@ func newRootCommand(ctx context.Context) *cobra.Command {
 	defaultServer := cfg.Server()
 	defaultRole := cfg.Role()
 	defaultPassword := cfg.Password()
+	defaultServerVersion := cfg.ServerVersion()
 
 	var cmd cobra.Command
 	cmd.SetContext(ctx)
@@ -127,6 +128,7 @@ func newRootCommand(ctx context.Context) *cobra.Command {
 	flags.String("password", defaultPassword, "the password used to communicate with RDFox")
 	flags.String("server", defaultServer, "the name of the RDFox server")
 	flags.String("protocol", defaultProtocol, "the protocol to use to communicate with RDFox")
+	flags.Int("server-version", defaultServerVersion, "the version of the RDFox server you are working with")
 
 	return &cmd
 }

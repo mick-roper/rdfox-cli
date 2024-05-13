@@ -8,11 +8,12 @@ import (
 )
 
 type initCommandConfig struct {
-	server   string
-	protocol string
-	role     string
-	password string
-	logLevel string
+	server        string
+	protocol      string
+	role          string
+	password      string
+	logLevel      string
+	serverVersion int
 }
 
 func (c initCommandConfig) Server() string {
@@ -33,6 +34,10 @@ func (c initCommandConfig) Password() string {
 
 func (c initCommandConfig) LogLevel() string {
 	return c.logLevel
+}
+
+func (c initCommandConfig) ServerVersion() int {
+	return c.serverVersion
 }
 
 func initCmd() *cobra.Command {

@@ -1,11 +1,12 @@
 package config
 
 type simpleConfig struct {
-	server   string
-	protocol string
-	role     string
-	password string
-	logLevel string
+	server        string
+	protocol      string
+	role          string
+	password      string
+	logLevel      string
+	serverVersion int
 }
 
 func (f simpleConfig) Server() string {
@@ -26,6 +27,10 @@ func (f simpleConfig) Password() string {
 
 func (f simpleConfig) LogLevel() string {
 	return f.logLevel
+}
+
+func (f simpleConfig) ServerVersion() int {
+	return f.serverVersion
 }
 
 type loader func() Config
@@ -55,6 +60,8 @@ func Load(loaders ...loader) Config {
 		if s := x.Server(); s != "" {
 			cfg.server = s
 		}
+
+		cfg.serverVersion = x.ServerVersion()
 	}
 
 	return &cfg

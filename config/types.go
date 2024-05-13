@@ -6,4 +6,5 @@ type Config interface {
 	Role() string
 	Password() string
 	LogLevel() string
+	ServerVersion() int
 }

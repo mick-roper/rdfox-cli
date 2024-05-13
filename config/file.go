@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/mick-roper/rdfox-cli/utils"
@@ -13,21 +14,23 @@ import (
 )
 
 const (
-	keyServer   = "server"
-	keyProtocol = "protocol"
-	keyRole     = "role"
-	keyPassword = "password"
-	keyLogLevel = "log_level"
+	keyServer        = "server"
+	keyProtocol      = "protocol"
+	keyRole          = "role"
+	keyPassword      = "password"
+	keyLogLevel      = "log_level"
+	keyServerVersion = "server_version"
 )
 
 const separator = "\t"
 
 type fileConfig struct {
-	server   string
-	protocol string
-	role     string
-	password string
-	logLevel string
+	server        string
+	protocol      string
+	role          string
+	password      string
+	logLevel      string
+	serverVersion int
 }
 
 func (f fileConfig) Server() string {
@@ -48,6 +51,10 @@ func (f fileConfig) Password() string {
 
 func (f fileConfig) LogLevel() string {
 	return f.logLevel
+}
+
+func (f fileConfig) ServerVersion() int {
+	return f.serverVersion
 }
 
 func DefaultFilePath() string {
@@ -105,6 +112,9 @@ func File(ctx context.Context, path string) (Config, error) {
 			cfg.role = v
 		case keyServer:
 			cfg.server = v
+		case keyServerVersion:
+			i, _ := strconv.Atoi(v)
+			cfg.serverVersion = i
 		}
 	}
 
@@ -164,11 +174,12 @@ func WriteFile(ctx context.Context, path string, cfg Config, overwrite bool) err
 	logger.Debug("writing file contents")
 
 	data := map[string]string{
-		keyServer:   cfg.Server(),
-		keyProtocol: cfg.Protocol(),
-		keyRole:     cfg.Role(),
-		keyPassword: cfg.Password(),
-		keyLogLevel: cfg.LogLevel(),
+		keyServer:        cfg.Server(),
+		keyProtocol:      cfg.Protocol(),
+		keyRole:          cfg.Role(),
+		keyPassword:      cfg.Password(),
+		keyLogLevel:      cfg.LogLevel(),
+		keyServerVersion: fmt.Sprint(cfg.ServerVersion()),
 	}
 
 	if err := write(file, data); err != nil {

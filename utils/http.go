@@ -55,7 +55,7 @@ func NewRequest(method, url, role, password string, body io.Reader) (*http.Reque
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", BasicAuthHeaderValue(role, password))
+	req.SetBasicAuth(role, password)
 
 	return req, nil
 }

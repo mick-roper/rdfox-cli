@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/mick-roper/rdfox-cli/rdfox"
 	v6 "github.com/mick-roper/rdfox-cli/rdfox/v6"
 	"github.com/mick-roper/rdfox-cli/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
-type formatter func(v6.Statistics) error
+type formatter func(rdfox.Statistics) error
 
 func Cmd() *cobra.Command {
 	var cmd cobra.Command
@@ -63,7 +64,7 @@ func Cmd() *cobra.Command {
 	return &cmd
 }
 
-func consoleFormatter(s v6.Statistics) error {
+func consoleFormatter(s rdfox.Statistics) error {
 	for subject, duples := range s {
 		fmt.Print(subject)
 
@@ -77,6 +78,6 @@ func consoleFormatter(s v6.Statistics) error {
 	return nil
 }
 
-func jsonFormatter(s v6.Statistics) error {
+func jsonFormatter(s rdfox.Statistics) error {
 	return json.NewEncoder(os.Stdout).Encode(s)
 }
