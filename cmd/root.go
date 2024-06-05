@@ -70,7 +70,6 @@ func Execute(currentVersion string) int {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-	defer close(okChan)
 	defer close(errChan)
 	defer close(sigChan)
 
@@ -80,7 +79,7 @@ func Execute(currentVersion string) int {
 			return
 		}
 
-		okChan <- struct{}{}
+		close(okChan)
 	}()
 
 	var exitCode int
@@ -89,7 +88,6 @@ func Execute(currentVersion string) int {
 	case <-okChan:
 		exitCode = 0
 	case <-sigChan:
-		cancel()
 		exitCode = 0
 	case err := <-errChan:
 		utils.LoggerFromContext(ctx).Error("execution failed", zap.Error(err))
@@ -123,12 +121,12 @@ func newRootCommand(ctx context.Context) *cobra.Command {
 	var cmd cobra.Command
 	cmd.SetContext(ctx)
 	flags := cmd.PersistentFlags()
+	flags.Int("server-version", defaultServerVersion, "the version of the RDFox server you are working with")
 	flags.String("log-level", defaultLogLevel, "the log level used by the CLI")
 	flags.String("role", defaultRole, "the role used to communicate with RDFox")
 	flags.String("password", defaultPassword, "the password used to communicate with RDFox")
 	flags.String("server", defaultServer, "the name of the RDFox server")
 	flags.String("protocol", defaultProtocol, "the protocol to use to communicate with RDFox")
-	flags.Int("server-version", defaultServerVersion, "the version of the RDFox server you are working with")
 
 	return &cmd
 }

@@ -206,7 +206,7 @@ func updateDatastoreAccessTypes(ctx context.Context, server, protocol, role, pas
 }
 
 func ListPrivileges(ctx context.Context, server, protocol, role, password, targetRole string) (map[string][]string, error) {
-	logger := utils.LoggerFromContext(ctx)
+	logger := utils.LoggerFromContext(ctx).With(zap.String("role", targetRole))
 	client := utils.HttpClientFromContext(ctx)
 
 	logger.Debug("building url...")

@@ -6,7 +6,8 @@ import (
 	"os"
 
 	"github.com/mick-roper/rdfox-cli/rdfox"
-	v6 "github.com/mick-roper/rdfox-cli/rdfox/v6"
+	serviceregister "github.com/mick-roper/rdfox-cli/service-register"
+
 	"github.com/mick-roper/rdfox-cli/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -41,11 +42,18 @@ func Cmd() *cobra.Command {
 		protocol := cmd.Flags().Lookup("protocol").Value.String()
 		role := cmd.Flags().Lookup("role").Value.String()
 		password := cmd.Flags().Lookup("password").Value.String()
+		version, _ := cmd.Flags().GetInt("server-version")
 
 		logger.Debug("got flags", zap.String("server", server), zap.String("protocol", protocol), zap.String("role", role), zap.String("password", password))
 		logger.Debug("getting stats...")
 
-		stats, err := v6.GetStats(ctx, server, protocol, role, password, datastore)
+		getStats, err := serviceregister.RetrieveGetStatsFunc(version)
+		if err != nil {
+			logger.Error("fatal error", zap.Error(err))
+			return err
+		}
+
+		stats, err := getStats(ctx, server, protocol, role, password, datastore)
 		if err != nil {
 			logger.Error("could not get stats", zap.Error(err))
 			return err

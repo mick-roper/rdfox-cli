@@ -7,6 +7,7 @@ type rootFlags struct {
 	Protocol string
 	Role     string
 	Password string
+	Version  int
 }
 
 func RootCommandFlags(cmd *cobra.Command) *rootFlags {
@@ -14,5 +15,9 @@ func RootCommandFlags(cmd *cobra.Command) *rootFlags {
 	protocol := cmd.Flags().Lookup("protocol").Value.String()
 	role := cmd.Flags().Lookup("role").Value.String()
 	password := cmd.Flags().Lookup("password").Value.String()
-	return &rootFlags{server, protocol, role, password}
+	version, err := cmd.Flags().GetInt("server-version")
+	if err != nil {
+		panic(err)
+	}
+	return &rootFlags{server, protocol, role, password, version}
 }

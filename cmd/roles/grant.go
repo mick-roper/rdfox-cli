@@ -2,8 +2,11 @@ package roles
 
 import (
 	"errors"
+	"fmt"
 
+	"github.com/mick-roper/rdfox-cli/rdfox"
 	v6 "github.com/mick-roper/rdfox-cli/rdfox/v6"
+	v7 "github.com/mick-roper/rdfox-cli/rdfox/v7"
 	"github.com/mick-roper/rdfox-cli/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -47,11 +50,20 @@ func grantPrivileges() *cobra.Command {
 		logger.Debug("getting root command flags...")
 
 		r := utils.RootCommandFlags(cmd)
+		var fn rdfox.GrantDatastorePrivileges
+		switch r.Version {
+		case 6:
+			fn = v6.GrantDatastorePrivileges
+		case 7:
+			fn = v7.GrantDatastorePrivileges
+		default:
+			return fmt.Errorf("RDFox version %d is unsupported", r.Version)
+		}
 
 		logger.Debug("got root command flags", zap.Any("flags", r))
 		logger.Info("granting privileges...")
 
-		if err := v6.GrantDatastorePrivileges(ctx, r.Server, r.Protocol, r.Role, r.Password, roleToUpdate, datastore, resource, accessTypes); err != nil {
+		if err := fn(ctx, r.Server, r.Protocol, r.Role, r.Password, roleToUpdate, datastore, resource, accessTypes); err != nil {
 			logger.Error("could not update role", zap.Error(err))
 			return err
 		}

@@ -3,7 +3,9 @@ package roles
 import (
 	"fmt"
 
+	"github.com/mick-roper/rdfox-cli/rdfox"
 	v6 "github.com/mick-roper/rdfox-cli/rdfox/v6"
+	v7 "github.com/mick-roper/rdfox-cli/rdfox/v7"
 	"github.com/mick-roper/rdfox-cli/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -39,10 +41,20 @@ func createRole() *cobra.Command {
 
 		r := utils.RootCommandFlags(cmd)
 
+		var createRole rdfox.CreateRole
+		switch r.Version {
+		case 6:
+			createRole = v6.CreateRole
+		case 7:
+			createRole = v7.CreateRole
+		default:
+			return fmt.Errorf("RDFox version %d is unsupported", r.Version)
+		}
+
 		logger.Debug("got root command flags", zap.Any("flags", r))
 		logger.Debug("creating role...")
 
-		if err := v6.CreateRole(ctx, r.Server, r.Protocol, r.Role, r.Password, newRoleName, newRolePassword); err != nil {
+		if err := createRole(ctx, r.Server, r.Protocol, r.Role, r.Password, newRoleName, newRolePassword); err != nil {
 			logger.Error("could not create role", zap.Error(err))
 			return err
 		}

@@ -10,7 +10,7 @@ type (
 	ReadWithCursor            func(ctx context.Context, server, protocol, role, password, datastore, connectionID, cursorID string, limit int, gotData func(Triples)) error
 	ImportAxioms              func(ctx context.Context, protocol, server, role, password, datastore, srcGraph, dstGraph string) error
 	GetRoles                  func(ctx context.Context, server, protocol, role, password string) ([]string, error)
-	CreateRoles               func(ctx context.Context, server, protocol, role, password, newRoleName, newRolePassword string) error
+	CreateRole                func(ctx context.Context, server, protocol, role, password, newRoleName, newRolePassword string) error
 	DeleteRole                func(ctx context.Context, server, protocol, role, password, roleToDelete string) error
 	GrantDatastorePrivileges  func(ctx context.Context, server, protocol, role, password, targetRole, datastore, resource, accessTypes string) error
 	RevokeDatastorePrivileges func(ctx context.Context, server, protocol, role, password, targetRole, datastore, resource, accessTypes string) error

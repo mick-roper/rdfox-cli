@@ -1,4 +1,4 @@
-package v6
+package v7
 
 import (
 	"bufio"
@@ -162,16 +162,13 @@ func updateDatastoreAccessTypes(ctx context.Context, server, protocol, role, pas
 
 	url := fmt.Sprintf("%s://%s/roles/%s/privileges?operation=%s", protocol, server, targetRole, operation)
 
-	logger.Debug("url built", zap.String("url", url))
-	logger.Debug("building body string...")
-
 	if resource == "*" {
 		url = fmt.Sprintf("%s&resource-specifier=>datastores|%s&access-types=%s", url, datastore, accessTypes)
 	} else {
 		url = fmt.Sprintf("%s&resource-specifier=|datastores|%s|%s&access-types=%s", url, datastore, resource, accessTypes)
 	}
 
-	logger.Debug("building request...")
+	logger.Debug("url built", zap.String("url", url))
 
 	req, err := utils.NewRequest(http.MethodPatch, url, role, password, nil)
 	if err != nil {
