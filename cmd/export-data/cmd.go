@@ -21,6 +21,7 @@ func Cmd() *cobra.Command {
 	var filePath string
 	var limit int
 	var graph string
+	var export string
 
 	cmd.Use = "export-data"
 	cmd.Short = "export data from the database"
@@ -30,6 +31,7 @@ func Cmd() *cobra.Command {
 	cmd.Flags().StringVar(&filePath, "file", "export.ttl", "the file that the exported data will be written to")
 	cmd.Flags().IntVar(&limit, "limit", 5000, "the maximum number of triples to return in a single cursor request")
 	cmd.Flags().StringVar(&graph, "graph", "", "the graph that contains the data you want to export")
+	cmd.Flags().StringVar(&export, "export", "all", "the types of facts to export: options are 'all', 'explicit' or 'implicit'")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if datastore == "" {
@@ -38,6 +40,10 @@ func Cmd() *cobra.Command {
 
 		if graph == "" {
 			return errors.New("graph is unset")
+		}
+
+		if !(export == "all" || export == "explicit" || export == "implicit") {
+			return errors.New("export must be one of 'all', 'explicit' or 'implicit'")
 		}
 
 		graph = strings.TrimPrefix(graph, "<")
@@ -75,7 +81,19 @@ func Cmd() *cobra.Command {
 		logger.Debug("connection created", zap.String("connection-id", connectionID))
 
 		logger.Debug("building query...")
-		query := fmt.Sprintf("SELECT ?s ?p ?o FROM <%s> WHERE { ?s ?p ?o }", graph)
+		var query string
+
+		switch export {
+		case "all":
+			query = fmt.Sprintf("SELECT ?s ?p ?o FROM <%s> WHERE { ?s ?p ?o }", graph)
+		case "explicit":
+			query = fmt.Sprintf("SELECT ?s ?p ?o FROM <%s> WHERE { ?s ?p ?o EXPLICIT TRUE }", graph)
+		case "implicit":
+			query = fmt.Sprintf("SELECT ?s ?p ?o FROM <%s> WHERE { ?s ?p ?o EXPLICIT FALSE }", graph)
+		default:
+			return errors.New("unsupported export option")
+		}
+
 		logger.Debug("query built", zap.String("query", query))
 
 		logger.Debug("creating a cursor...")
