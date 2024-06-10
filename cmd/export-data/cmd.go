@@ -42,10 +42,6 @@ func Cmd() *cobra.Command {
 			return errors.New("graph is unset")
 		}
 
-		if !(export == "all" || export == "explicit" || export == "implicit") {
-			return errors.New("export must be one of 'all', 'explicit' or 'implicit'")
-		}
-
 		graph = strings.TrimPrefix(graph, "<")
 		graph = strings.TrimSuffix(graph, ">")
 
@@ -91,7 +87,7 @@ func Cmd() *cobra.Command {
 		case "implicit":
 			query = fmt.Sprintf("SELECT ?s ?p ?o FROM <%s> WHERE { ?s ?p ?o EXPLICIT FALSE }", graph)
 		default:
-			return errors.New("unsupported export option")
+			return errors.New("export must be one of 'all', 'explicit' or 'implicit'")
 		}
 
 		logger.Debug("query built", zap.String("query", query))
