@@ -28,10 +28,8 @@ func RollbackTransaction(ctx context.Context, server, protocol, role, password, 
 }
 
 func transactionOp(ctx context.Context, server, protocol, role, password, datastore string, connectionID string, transactionOperation string) error {
-	logger := utils.LoggerFromContext(ctx).With(zap.String("op", "update transaction"), zap.String("transaction", transactionOperation))
+	logger := utils.LoggerFromContext(ctx).With(zap.String("op", "update transaction"), zap.String("transaction", transactionOperation), zap.String("connection_id", connectionID))
 	client := utils.HttpClientFromContext(ctx)
-
-	logger.Debug("creating url...")
 
 	url := fmt.Sprintf("%s://%s/datastores/%s/connections/%s/transaction?operation=%s", protocol, server, datastore, connectionID, transactionOperation)
 
