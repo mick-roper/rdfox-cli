@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	v6 "github.com/mick-roper/rdfox-cli/rdfox/v6"
+	v7 "github.com/mick-roper/rdfox-cli/rdfox/v7"
 	"github.com/mick-roper/rdfox-cli/ttl"
 	"github.com/mick-roper/rdfox-cli/utils"
 	"github.com/spf13/cobra"
@@ -58,7 +58,7 @@ func Cmd() *cobra.Command {
 		logger.Debug("got flags", zap.String("server", server), zap.String("protocol", protocol), zap.String("role", role), zap.String("password", password))
 		logger.Debug("creating a connection...")
 
-		connectionID, err := v6.CreateConnection(ctx, server, protocol, role, password, datastore)
+		connectionID, err := v7.CreateConnection(ctx, server, protocol, role, password, datastore)
 		if err != nil {
 			logger.Error("could not create a connection", zap.Error(err))
 			return err
@@ -67,7 +67,7 @@ func Cmd() *cobra.Command {
 		defer func() {
 			logger.Debug("deleting the connection...")
 
-			if err := v6.DeleteConnection(ctx, server, protocol, role, password, datastore, connectionID); err != nil {
+			if err := v7.DeleteConnection(ctx, server, protocol, role, password, datastore, connectionID); err != nil {
 				logger.Error("could not delete connection", zap.Error(err))
 			}
 
@@ -75,6 +75,17 @@ func Cmd() *cobra.Command {
 		}()
 
 		logger.Debug("connection created", zap.String("connection-id", connectionID))
+
+		if err := v7.CreateReadOnlyTransaction(ctx, server, protocol, role, password, datastore, connectionID); err != nil {
+			logger.Error("coudl not create a transaction", zap.Error(err))
+			return err
+		}
+
+		defer func() {
+			if err := v7.RollbackTransaction(ctx, server, protocol, role, password, datastore, connectionID); err != nil {
+				logger.Error("coudl not roll back the transaction", zap.Error(err))
+			}
+		}()
 
 		logger.Debug("building query...")
 		var query string
@@ -94,7 +105,7 @@ func Cmd() *cobra.Command {
 
 		logger.Debug("creating a cursor...")
 
-		cursorID, err := v6.CreateCursor(ctx, server, protocol, role, password, datastore, connectionID, query)
+		cursorID, err := v7.CreateCursor(ctx, server, protocol, role, password, datastore, connectionID, query)
 		if err != nil {
 			logger.Error("could not create a cursor", zap.Error(err))
 			return err
@@ -103,7 +114,7 @@ func Cmd() *cobra.Command {
 		defer func() {
 			logger.Debug("deleting cursor...")
 
-			if err := v6.DeleteCursor(ctx, server, protocol, role, password, datastore, connectionID, cursorID); err != nil {
+			if err := v7.DeleteCursor(ctx, server, protocol, role, password, datastore, connectionID, cursorID); err != nil {
 				logger.Error("could not close the cursor", zap.Error(err))
 			}
 
@@ -176,7 +187,7 @@ func Cmd() *cobra.Command {
 
 			logger.Info("reading data from the server...")
 
-			if err := v6.ReadWithCursor(ctx, server, protocol, role, password, datastore, connectionID, cursorID, limit, handle); err != nil {
+			if err := v7.ReadWithCursor(ctx, server, protocol, role, password, datastore, connectionID, cursorID, limit, handle); err != nil {
 				return err
 			}
 
