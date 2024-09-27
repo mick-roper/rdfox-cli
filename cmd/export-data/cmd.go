@@ -15,13 +15,14 @@ import (
 )
 
 func Cmd() *cobra.Command {
-	var cmd cobra.Command
-
-	var datastore string
-	var filePath string
-	var limit int
-	var graph string
-	var export string
+	var (
+		cmd       cobra.Command
+		datastore string
+		filePath  string
+		limit     int
+		graph     string
+		export    string
+	)
 
 	cmd.Use = "export-data"
 	cmd.Short = "export data from the database"
