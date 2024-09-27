@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/mick-roper/rdfox-cli/utils"
 	"go.uber.org/zap"
@@ -69,11 +68,6 @@ func transactionOp(ctx context.Context, server, protocol, role, password, datast
 
 		return fmt.Errorf("bad response from server: %s - %s", res.Status, string(bytes))
 	}
-
-	c := res.Header.Get("location")
-	c = c[strings.LastIndex(c, "/")+1:]
-
-	logger.Info("transaction updated", zap.String("connection-id", c))
 
 	return nil
 }
