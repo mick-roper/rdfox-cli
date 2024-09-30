@@ -162,17 +162,11 @@ func (t *TripleCursor) Read(ctx context.Context) bool {
 
 	res.Body.Close()
 
-	if i < t.limit {
-		logger.Debug("no more data to process")
-		t.Err = nil
-		return false
-	}
-
 	logger.Debug("processed triples", zap.Int("count", i))
 
 	t.operation = "advance"
 
-	return true
+	return i >= t.limit
 }
 
 func CreateTripleCursor(ctx context.Context, server, protocol, role, password, datastore, connectionID, query string, limit int) (cursor, error) {
