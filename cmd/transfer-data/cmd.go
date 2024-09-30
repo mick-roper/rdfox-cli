@@ -3,12 +3,9 @@ package exportdata
 import (
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
 	v7 "github.com/mick-roper/rdfox-cli/rdfox/v7"
-	"github.com/mick-roper/rdfox-cli/ttl"
 	"github.com/mick-roper/rdfox-cli/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -16,23 +13,23 @@ import (
 
 func Cmd() *cobra.Command {
 	var (
-		cmd       cobra.Command
-		datastore string
-		filePath  string
-		limit     int
-		graph     string
-		export    string
+		cmd         cobra.Command
+		datastore   string
+		limit       int
+		graph       string
+		export      string
+		destination string
 	)
 
-	cmd.Use = "export-data"
-	cmd.Short = "export data from the database"
+	cmd.Use = "transfer-data"
+	cmd.Short = "transfer data from one RDFox instance to another RDFox instance"
 	cmd.Long = "TODO: write sometihn inspiring here!"
 
 	cmd.Flags().StringVar(&datastore, "datastore", "", "the datastore that contains the data you want to export")
-	cmd.Flags().StringVar(&filePath, "file", "export.ttl", "the file that the exported data will be written to")
 	cmd.Flags().IntVar(&limit, "limit", 5000, "the maximum number of triples to return in a single cursor request")
 	cmd.Flags().StringVar(&graph, "graph", "", "the graph that contains the data you want to export")
 	cmd.Flags().StringVar(&export, "export", "all", "the types of facts to export: options are 'all', 'explicit' or 'implicit'")
+	cmd.Flags().StringVar(&destination, "dst", "", "the destination server")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if datastore == "" {
@@ -41,6 +38,10 @@ func Cmd() *cobra.Command {
 
 		if graph == "" {
 			return errors.New("graph is unset")
+		}
+
+		if destination == "" {
+			return errors.New("destination is unset")
 		}
 
 		graph = strings.TrimPrefix(graph, "<")
@@ -113,31 +114,16 @@ func Cmd() *cobra.Command {
 		}
 
 		defer func() {
-			logger.Debug("deleting cursor...")
+			logger.Debug("closing cursor...")
 
 			if err := cursor.Close(ctx); err != nil {
 				logger.Error("could not close the cursor", zap.Error(err))
 			}
 
-			logger.Debug("cursor deleted!")
+			logger.Debug("cursor closed!")
 		}()
 
-		logger.Debug("opening file for export...")
-		f, err := openExportFile(filePath)
-		if err != nil {
-			logger.Error("could not create export file", zap.Error(err))
-			return err
-		}
-
-		defer func() {
-			logger.Debug("closing file...")
-
-			if err := f.Close(); err != nil {
-				logger.Error("could not close file", zap.Error(err))
-			}
-
-			logger.Debug("file closed")
-		}()
+		logger.Debug("cursor created")
 
 		logger.Info("getting data...")
 
@@ -145,50 +131,15 @@ func Cmd() *cobra.Command {
 		readDoneChan := make(chan struct{})
 		writeDoneChan := make(chan struct{})
 
-		write := func() {
-			defer close(writeDoneChan)
-			for {
-				select {
-				case triples := <-dataChan:
-					if len(triples) == 0 {
-						continue
-					}
-
-					writeFile := func() error {
-						if err := ttl.Write(triples, f); err != nil {
-							return err
-						}
-
-						return nil
-					}
-
-					logger.Info("writing data to file...")
-
-					if err := utils.DoWithTicker(writeFile, func() {
-						logger.Info("still writing file...")
-					}); err != nil {
-						logger.Error("could not write data", zap.Error(err))
-						return
-					}
-
-					logger.Info("write complete")
-				case <-readDoneChan:
-					return
-				}
-			}
-		}
-
-		go write()
-
 		readData := func() error {
 			defer close(readDoneChan)
 			defer close(dataChan)
 
-			read := true
 			cursor := cursor.(*v7.TripleCursor)
-			for read {
-				read = cursor.Read(ctx)
+
+			for cursor.Read(ctx) {
 				if err := cursor.Err; err != nil {
+					logger.Error("could not read data", zap.Error(err))
 					return err
 				}
 
@@ -208,32 +159,4 @@ func Cmd() *cobra.Command {
 	}
 
 	return &cmd
-}
-
-func openExportFile(path string) (*os.File, error) {
-	_, err := os.Stat(path)
-
-	// file exists
-	if err == nil {
-		file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
-		if err != nil {
-			return nil, err
-		}
-
-		if err := file.Truncate(0); err != nil {
-			return nil, err
-		}
-
-		return file, nil
-	}
-
-	if !os.IsNotExist(err) {
-		return nil, err
-	}
-
-	if err := os.MkdirAll(filepath.Dir(path), 0770); err != nil {
-		return nil, err
-	}
-
-	return os.Create(path)
 }
