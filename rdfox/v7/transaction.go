@@ -30,6 +30,8 @@ func transactionOp(ctx context.Context, server, protocol, role, password, datast
 	logger := utils.LoggerFromContext(ctx).With(zap.String("op", "update transaction"), zap.String("transaction", transactionOperation), zap.String("connection_id", connectionID))
 	client := utils.HttpClientFromContext(ctx)
 
+	logger.Info("transaction op beginning...")
+
 	url := fmt.Sprintf("%s://%s/datastores/%s/connections/%s/transaction?operation=%s", protocol, server, datastore, connectionID, transactionOperation)
 
 	logger.Debug("url created", zap.String("url", url))
@@ -68,6 +70,8 @@ func transactionOp(ctx context.Context, server, protocol, role, password, datast
 
 		return fmt.Errorf("bad response from server: %s - %s", res.Status, string(bytes))
 	}
+
+	logger.Info("transaction op complete")
 
 	return nil
 }
