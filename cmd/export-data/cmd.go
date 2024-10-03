@@ -94,11 +94,11 @@ func Cmd() *cobra.Command {
 
 		switch export {
 		case "all":
-			query = fmt.Sprintf("SELECT ?s ?p ?o FROM <%s> WHERE { ?s ?p ?o }", graph)
+			query = fmt.Sprintf("SELECT ?S ?P ?O FROM <%s> WHERE { ?S ?P ?O }", graph)
 		case "explicit":
-			query = fmt.Sprintf("SELECT ?s ?p ?o FROM <%s> WHERE { ?s ?p ?o EXPLICIT TRUE }", graph)
+			query = fmt.Sprintf("SELECT ?S ?P ?O FROM <%s> WHERE { ?S ?P ?O EXPLICIT TRUE }", graph)
 		case "implicit":
-			query = fmt.Sprintf("SELECT ?s ?p ?o FROM <%s> WHERE { ?s ?p ?o EXPLICIT FALSE }", graph)
+			query = fmt.Sprintf("SELECT ?S ?P ?O FROM <%s> WHERE { ?S ?P ?O EXPLICIT FALSE }", graph)
 		default:
 			return errors.New("export must be one of 'all', 'explicit' or 'implicit'")
 		}
