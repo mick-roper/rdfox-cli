@@ -32,11 +32,20 @@ type (
 		Data map[string]map[string][]string
 		Err  error
 	}
+
+	TTLCursor struct {
+		cursorBase
+		Data []byte
+		Err  error
+	}
 )
 
-var _ cursor = &TripleCursor{}
+var (
+	_ cursor = &TripleCursor{}
+	_ cursor = &TTLCursor{}
+)
 
-func (t *TripleCursor) Close(ctx context.Context) error {
+func (t *cursorBase) Close(ctx context.Context) error {
 	logger := utils.LoggerFromContext(ctx).With(zap.String("op", "delete-cursor"), zap.String("url", t.baseUrl))
 	client := utils.HttpClientFromContext(ctx)
 	logger.Debug("building request...")
@@ -47,7 +56,7 @@ func (t *TripleCursor) Close(ctx context.Context) error {
 		return err
 	}
 
-	req.Header.Set("Authorization", utils.BasicAuthHeaderValue(t.role, t.password))
+	req.SetBasicAuth(t.role, t.password)
 
 	logger.Debug("request built", utils.RequestToLoggerFields(req)...)
 	logger.Debug("executing request...")
@@ -235,4 +244,9 @@ func CreateTripleCursor(ctx context.Context, server, protocol, role, password, d
 	}
 
 	return &c, nil
+}
+
+// Read implements cursor.
+func (t *TTLCursor) Read(context.Context) bool {
+	panic("unimplemented")
 }

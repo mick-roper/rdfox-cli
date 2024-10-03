@@ -3,12 +3,13 @@ package exportdata
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	v7 "github.com/mick-roper/rdfox-cli/rdfox/v7"
-	"github.com/mick-roper/rdfox-cli/ttl"
 	"github.com/mick-roper/rdfox-cli/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -141,70 +142,37 @@ func Cmd() *cobra.Command {
 
 		logger.Info("getting data...")
 
-		dataChan := make(chan map[string]map[string][]string)
-		readDoneChan := make(chan struct{})
-		writeDoneChan := make(chan struct{})
+		doneChan := make(chan struct{})
+		errChan := make(chan error)
 
-		write := func() {
-			defer close(writeDoneChan)
+		go func() {
+			defer close(doneChan)
+			res, err := v7.Query(ctx, protocol, server, role, password, datastore, strings.NewReader(query))
+			if err != nil {
+				errChan <- err
+				return
+			}
+
+			if _, err = io.Copy(f, res); err != nil {
+				errChan <- err
+				return
+			}
+		}()
+
+		go func() {
+			t := time.Tick(time.Second * 5)
 			for {
-				select {
-				case triples := <-dataChan:
-					if len(triples) == 0 {
-						continue
-					}
-
-					writeFile := func() error {
-						if err := ttl.Write(triples, f); err != nil {
-							return err
-						}
-
-						return nil
-					}
-
-					logger.Info("writing data to file...")
-
-					if err := utils.DoWithTicker(writeFile, func() {
-						logger.Info("still writing file...")
-					}); err != nil {
-						logger.Error("could not write data", zap.Error(err))
-						return
-					}
-
-					logger.Info("write complete")
-				case <-readDoneChan:
-					return
-				}
+				<-t
+				logger.Info("writing query response...")
 			}
-		}
+		}()
 
-		go write()
-
-		readData := func() error {
-			defer close(readDoneChan)
-			defer close(dataChan)
-
-			read := true
-			cursor := cursor.(*v7.TripleCursor)
-			for read {
-				read = cursor.Read(ctx)
-				if err := cursor.Err; err != nil {
-					return err
-				}
-
-				dataChan <- cursor.Data
-			}
-
+		select {
+		case <-doneChan:
 			return nil
-		}
-
-		if err := utils.DoWithTicker(readData, func() {
-			logger.Info("still getting data...")
-		}); err != nil {
+		case err := <-errChan:
 			return err
 		}
-		<-writeDoneChan
-		return nil
 	}
 
 	return &cmd
