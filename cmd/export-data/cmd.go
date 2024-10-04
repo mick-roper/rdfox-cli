@@ -58,36 +58,6 @@ func Cmd() *cobra.Command {
 		password := cmd.Flags().Lookup("password").Value.String()
 
 		logger.Debug("got flags", zap.String("server", server), zap.String("protocol", protocol), zap.String("role", role), zap.String("password", password))
-		logger.Debug("creating a connection...")
-
-		connectionID, err := v7.CreateConnection(ctx, server, protocol, role, password, datastore)
-		if err != nil {
-			logger.Error("could not create a connection", zap.Error(err))
-			return err
-		}
-
-		defer func() {
-			logger.Debug("deleting the connection...")
-
-			if err := v7.DeleteConnection(ctx, server, protocol, role, password, datastore, connectionID); err != nil {
-				logger.Error("could not delete connection", zap.Error(err))
-			}
-
-			logger.Debug("connection deleted!")
-		}()
-
-		logger.Debug("connection created", zap.String("connection-id", connectionID))
-
-		if err := v7.CreateReadOnlyTransaction(ctx, server, protocol, role, password, datastore, connectionID); err != nil {
-			logger.Error("coudl not create a transaction", zap.Error(err))
-			return err
-		}
-
-		defer func() {
-			if err := v7.RollbackTransaction(ctx, server, protocol, role, password, datastore, connectionID); err != nil {
-				logger.Error("coudl not roll back the transaction", zap.Error(err))
-			}
-		}()
 
 		logger.Debug("building query...")
 		var query string
@@ -104,24 +74,6 @@ func Cmd() *cobra.Command {
 		}
 
 		logger.Debug("query built", zap.String("query", query))
-
-		logger.Debug("creating a cursor...")
-
-		cursor, err := v7.CreateTripleCursor(ctx, server, protocol, role, password, datastore, connectionID, query, limit)
-		if err != nil {
-			logger.Error("could not create a cursor", zap.Error(err))
-			return err
-		}
-
-		defer func() {
-			logger.Debug("deleting cursor...")
-
-			if err := cursor.Close(ctx); err != nil {
-				logger.Error("could not close the cursor", zap.Error(err))
-			}
-
-			logger.Debug("cursor deleted!")
-		}()
 
 		logger.Debug("opening file for export...")
 		f, err := openExportFile(filePath)
@@ -153,10 +105,16 @@ func Cmd() *cobra.Command {
 				return
 			}
 
+			defer res.Close()
+
+			logger.Info("writing file...")
+
 			if _, err = io.Copy(f, res); err != nil {
 				errChan <- err
 				return
 			}
+
+			logger.Info("write complete!")
 		}()
 
 		go func() {

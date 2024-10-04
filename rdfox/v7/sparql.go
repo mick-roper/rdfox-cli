@@ -9,7 +9,7 @@ import (
 	"github.com/mick-roper/rdfox-cli/utils"
 )
 
-func Query(ctx context.Context, protocol, server, role, password, datastore string, query io.Reader) (io.Reader, error) {
+func Query(ctx context.Context, protocol, server, role, password, datastore string, query io.Reader) (io.ReadCloser, error) {
 	logger := utils.LoggerFromContext(ctx)
 	client := utils.HttpClientFromContext(ctx)
 	url := fmt.Sprintf("%s://%s/datastores/%s/sparql", protocol, server, datastore)
@@ -22,6 +22,7 @@ func Query(ctx context.Context, protocol, server, role, password, datastore stri
 	req.SetBasicAuth(role, password)
 	req.Header.Set("Content-Type", "application/sparql-query")
 	req.Header.Set("Accept", "text/turtle")
+	req.Header.Set("Query-Time-Limit", "unlimited")
 
 	logger.Debug("request built", utils.RequestToLoggerFields(req)...)
 
