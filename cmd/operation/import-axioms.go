@@ -3,7 +3,7 @@ package operation
 import (
 	"errors"
 
-	v6 "github.com/mick-roper/rdfox-cli/rdfox/v6"
+	v7 "github.com/mick-roper/rdfox-cli/rdfox/v7"
 	"github.com/mick-roper/rdfox-cli/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -48,7 +48,7 @@ func importAxiomsCommand() *cobra.Command {
 		logger.Debug("got flags", zap.String("server", server), zap.String("protocol", protocol), zap.String("role", role), zap.String("password", password))
 		logger.Debug("importing axioms...")
 
-		if err := v6.ImportAxioms(ctx, protocol, server, role, password, datastore, srcGraph, dstGraph); err != nil {
+		if err := v7.ImportAxioms(ctx, protocol, server, role, password, datastore, srcGraph, dstGraph); err != nil {
 			logger.Error("could not import axioms", zap.Error(err))
 			return err
 		}
